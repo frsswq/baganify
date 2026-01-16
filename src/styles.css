@@ -1,0 +1,8 @@
+@import "tailwindcss";
+
+/* Custom base styles */
+@theme {
+  --color-canvas: #f5f5f5;
+  --color-accent: #0d99ff;
+  --color-accent-hover: #0b87e0;
+}
