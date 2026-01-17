@@ -153,13 +153,13 @@ export function PropertyPanel() {
         <div className="p-3 border-b border-gray-100">
           <div className="text-xs font-medium text-gray-500 mb-2">Stroke Width</div>
            <div className="flex gap-1">
-            {[1, 1.25, 2, 3].map(w => (
+            {[1.25, 2.25, 3.25].map(w => (
               <button 
                 key={w} 
                 onClick={() => handleBatchUpdate({ strokeWidth: w })} 
                 className={`flex-1 py-1 text-xs rounded ${!isMulti && firstShape.strokeWidth === w ? 'bg-gray-800 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}
               >
-                {w}px
+                {Math.floor(w)}px
               </button>
             ))}
           </div>

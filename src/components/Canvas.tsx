@@ -251,8 +251,6 @@ function ShapeRenderer({ shape, isSelected, isEditing, onClick, onDoubleClick, o
 
   switch (shape.type) {
     case 'rectangle':
-      const cx = shape.x + shape.width / 2;
-      const cy = shape.y + shape.height / 2;
       return (
         <g onClick={onClick} onDoubleClick={onDoubleClick} style={{ cursor: 'pointer' }}>
           {shape.stacked && (
@@ -295,13 +293,27 @@ function ShapeRenderer({ shape, isSelected, isEditing, onClick, onDoubleClick, o
             </foreignObject>
           ) : (
             shape.label && (
-              <text x={cx} y={cy} fontSize={shape.labelFontSize} fontFamily="Arial, sans-serif" textAnchor="middle" dominantBaseline="middle" fill={shape.labelColor} pointerEvents="none">
-                {shape.label.split('\n').map((line, i, arr) => (
-                  <tspan key={i} x={cx} dy={i === 0 ? `${-(arr.length - 1) * 0.6}em` : '1.2em'}>
-                    {line}
-                  </tspan>
-                ))}
-              </text>
+              <foreignObject x={shape.x} y={shape.y} width={shape.width} height={shape.height} pointerEvents="none">
+                <div style={{ 
+                  width: '100%', 
+                  height: '100%', 
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  justifyContent: 'center', 
+                  padding: 4,
+                  fontSize: shape.labelFontSize, 
+                  fontFamily: 'Arial, sans-serif', 
+                  textAlign: 'center', 
+                  color: shape.labelColor,
+                  overflowWrap: 'break-word',
+                  wordBreak: 'break-word',
+                  whiteSpace: 'pre-wrap',
+                  lineHeight: 1.3,
+                  userSelect: 'none'
+                }}>
+                  {shape.label}
+                </div>
+              </foreignObject>
             )
           )}
           {renderHandles(shape.x, shape.y, shape.width, shape.height)}
@@ -350,13 +362,27 @@ function ShapeRenderer({ shape, isSelected, isEditing, onClick, onDoubleClick, o
             </foreignObject>
           ) : (
             shape.label && (
-              <text x={shape.x + shape.width / 2} y={shape.y + shape.height / 2} fontSize={shape.labelFontSize} fontFamily="Arial, sans-serif" textAnchor="middle" dominantBaseline="middle" fill={shape.labelColor} pointerEvents="none">
-                {shape.label.split('\n').map((line, i, arr) => (
-                  <tspan key={i} x={shape.x + shape.width / 2} dy={i === 0 ? `${-(arr.length - 1) * 0.6}em` : '1.2em'}>
-                    {line}
-                  </tspan>
-                ))}
-              </text>
+              <foreignObject x={shape.x} y={shape.y} width={shape.width} height={shape.height} pointerEvents="none">
+                <div style={{ 
+                  width: '100%', 
+                  height: '100%', 
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  justifyContent: 'center', 
+                  padding: 14,
+                  fontSize: shape.labelFontSize, 
+                  fontFamily: 'Arial, sans-serif', 
+                  textAlign: 'center', 
+                  color: shape.labelColor,
+                  overflowWrap: 'break-word',
+                  wordBreak: 'break-word',
+                  whiteSpace: 'pre-wrap',
+                  lineHeight: 1.3,
+                  userSelect: 'none'
+                }}>
+                  {shape.label}
+                </div>
+              </foreignObject>
             )
           )}
           {renderHandles(shape.x, shape.y, shape.width, shape.height)}

@@ -161,7 +161,7 @@ export const useShapeStore = create<ShapeStore>((set, get) => ({
         endArrowhead: 'none',
         fill: 'none',
         stroke: '#000000',
-        strokeWidth: 1,
+        strokeWidth: 1.25,
         rotation: 0,
       };
       connectors.push(connector);
@@ -333,7 +333,7 @@ export const useShapeStore = create<ShapeStore>((set, get) => ({
       endArrowhead: 'none',
       fill: 'none',
       stroke: '#000000',
-      strokeWidth: 1,
+      strokeWidth: 1.25,
       rotation: 0,
     };
     
@@ -375,7 +375,7 @@ export const useShapeStore = create<ShapeStore>((set, get) => ({
       endArrowhead: 'none',
       fill: 'none',
       stroke: '#000000',
-      strokeWidth: 1,
+      strokeWidth: 1.25,
       rotation: 0,
     };
     
@@ -414,7 +414,7 @@ export const useShapeStore = create<ShapeStore>((set, get) => ({
       endArrowhead: 'none',
       fill: 'none',
       stroke: '#000000',
-      strokeWidth: 1,
+      strokeWidth: 1.25,
       rotation: 0,
     };
     
