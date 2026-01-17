@@ -1,0 +1,380 @@
+$ ultracite check
+src/components/PropertyPanel.tsx:328:41 lint/suspicious/useIterableCallbackReturn ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × This callback passed to forEach() iterable method should not return a value.
+  
+    326 │         <Button
+    327 │           className="h-8 w-full text-red-500 hover:bg-red-50 hover:text-red-600"
+  > 328 │           onClick={() => selectedShapes.forEach((s) => removeShape(s.id))}
+        │                                         ^^^^^^^
+    329 │           size="sm"
+    330 │           variant="ghost"
+  
+  i Either remove this return or remove the returned value.
+  
+    326 │         <Button
+    327 │           className="h-8 w-full text-red-500 hover:bg-red-50 hover:text-red-600"
+  > 328 │           onClick={() => selectedShapes.forEach((s) => removeShape(s.id))}
+        │                                                        ^^^^^^^^^^^^^^^^^
+    329 │           size="sm"
+    330 │           variant="ghost"
+  
+
+src/components/ui/combobox.tsx:3:8 lint/performance/noNamespaceImport ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Avoid namespace imports, it can prevent efficient tree shaking and increase bundle size.
+  
+    1 │ import { Combobox as ComboboxPrimitive } from "@base-ui/react";
+    2 │ import { CaretDownIcon, CheckIcon, XIcon } from "@phosphor-icons/react";
+  > 3 │ import * as React from "react";
+      │        ^^^^^^^^^^^^^^^^^^^^^^^
+    4 │ import { Button } from "@/components/ui/button";
+    5 │ import {
+  
+  i Use named imports instead.
+  
+
+src/components/ui/field.tsx:196:30 lint/suspicious/noDoubleEquals  FIXABLE  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Using == may be unsafe if you are relying on type coercion.
+  
+    194 │     ];
+    195 │ 
+  > 196 │     if (uniqueErrors?.length == 1) {
+        │                              ^^
+    197 │       return uniqueErrors[0]?.message;
+    198 │     }
+  
+  i == is only allowed when comparing against null.
+  
+  i Unsafe fix: Use === instead.
+  
+    196 │ ····if·(uniqueErrors?.length·===·1)·{
+        │                                +     
+
+src/hooks/use-mobile.ts:1:8 lint/performance/noNamespaceImport ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Avoid namespace imports, it can prevent efficient tree shaking and increase bundle size.
+  
+  > 1 │ import * as React from "react";
+      │        ^^^^^^^^^^^^^^^^^^^^^^^
+    2 │ 
+    3 │ const MOBILE_BREAKPOINT = 768;
+  
+  i Use named imports instead.
+  
+
+src/lib/clipboard/copy.ts:34:7 lint/style/useShorthandAssign  FIXABLE  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Assignment (=) can be replaced with operator assignment -=.
+  
+    32 │       s.endPoint = { x: s.endPoint.x - bbox.x, y: s.endPoint.y - bbox.y };
+    33 │       // Also update x/y just in case they are used
+  > 34 │       s.x = s.x - bbox.x;
+       │       ^^^^^^^^^^^^^^^^^^
+    35 │       s.y = s.y - bbox.y;
+    36 │     } else {
+  
+  i Unsafe fix: Use -= instead.
+  
+     32  32 │         s.endPoint = { x: s.endPoint.x - bbox.x, y: s.endPoint.y - bbox.y };
+     33  33 │         // Also update x/y just in case they are used
+     34     │ - ······s.x·=·s.x·-·bbox.x;
+         34 │ + ······s.x·-=·bbox.x;
+     35  35 │         s.y = s.y - bbox.y;
+     36  36 │       } else {
+  
+
+src/lib/clipboard/copy.ts:35:7 lint/style/useShorthandAssign  FIXABLE  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Assignment (=) can be replaced with operator assignment -=.
+  
+    33 │       // Also update x/y just in case they are used
+    34 │       s.x = s.x - bbox.x;
+  > 35 │       s.y = s.y - bbox.y;
+       │       ^^^^^^^^^^^^^^^^^^
+    36 │     } else {
+    37 │       s.x = s.x - bbox.x;
+  
+  i Unsafe fix: Use -= instead.
+  
+     33  33 │         // Also update x/y just in case they are used
+     34  34 │         s.x = s.x - bbox.x;
+     35     │ - ······s.y·=·s.y·-·bbox.y;
+         35 │ + ······s.y·-=·bbox.y;
+     36  36 │       } else {
+     37  37 │         s.x = s.x - bbox.x;
+  
+
+src/lib/clipboard/copy.ts:37:7 lint/style/useShorthandAssign  FIXABLE  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Assignment (=) can be replaced with operator assignment -=.
+  
+    35 │       s.y = s.y - bbox.y;
+    36 │     } else {
+  > 37 │       s.x = s.x - bbox.x;
+       │       ^^^^^^^^^^^^^^^^^^
+    38 │       s.y = s.y - bbox.y;
+    39 │     }
+  
+  i Unsafe fix: Use -= instead.
+  
+     35  35 │         s.y = s.y - bbox.y;
+     36  36 │       } else {
+     37     │ - ······s.x·=·s.x·-·bbox.x;
+         37 │ + ······s.x·-=·bbox.x;
+     38  38 │         s.y = s.y - bbox.y;
+     39  39 │       }
+  
+
+src/lib/clipboard/copy.ts:38:7 lint/style/useShorthandAssign  FIXABLE  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Assignment (=) can be replaced with operator assignment -=.
+  
+    36 │     } else {
+    37 │       s.x = s.x - bbox.x;
+  > 38 │       s.y = s.y - bbox.y;
+       │       ^^^^^^^^^^^^^^^^^^
+    39 │     }
+    40 │     return s;
+  
+  i Unsafe fix: Use -= instead.
+  
+     36  36 │       } else {
+     37  37 │         s.x = s.x - bbox.x;
+     38     │ - ······s.y·=·s.y·-·bbox.y;
+         38 │ + ······s.y·-=·bbox.y;
+     39  39 │       }
+     40  40 │       return s;
+  
+
+src/lib/clipboard/copy.ts:78:1 lint/suspicious/useAwait ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × This async function lacks an await expression.
+  
+     76 │  * Convert SVG string to PNG blob
+     77 │  */
+   > 78 │ async function svgToPng(
+        │ ^^^^^^^^^^^^^^^^^^^^^^^^
+   > 79 │   svgContent: string,
+         ...
+  > 122 │   });
+  > 123 │ }
+        │ ^
+    124 │ 
+    125 │ /**
+  
+  i Remove this async modifier, or add an await expression in the function.
+  
+     76 │  * Convert SVG string to PNG blob
+     77 │  */
+   > 78 │ async function svgToPng(
+        │ ^^^^^^^^^^^^^^^^^^^^^^^^
+   > 79 │   svgContent: string,
+         ...
+  > 122 │   });
+  > 123 │ }
+        │ ^
+    124 │ 
+    125 │ /**
+  
+  i Async functions without await expressions may not need to be declared async.
+  
+
+src/lib/clipboard/copy.ts:137:7 lint/style/useShorthandAssign  FIXABLE  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Assignment (=) can be replaced with operator assignment -=.
+  
+    135 │       s.startPoint = { x: s.startPoint.x - bbox.x, y: s.startPoint.y - bbox.y };
+    136 │       s.endPoint = { x: s.endPoint.x - bbox.x, y: s.endPoint.y - bbox.y };
+  > 137 │       s.x = s.x - bbox.x;
+        │       ^^^^^^^^^^^^^^^^^^
+    138 │       s.y = s.y - bbox.y;
+    139 │     } else {
+  
+  i Unsafe fix: Use -= instead.
+  
+    135 135 │         s.startPoint = { x: s.startPoint.x - bbox.x, y: s.startPoint.y - bbox.y };
+    136 136 │         s.endPoint = { x: s.endPoint.x - bbox.x, y: s.endPoint.y - bbox.y };
+    137     │ - ······s.x·=·s.x·-·bbox.x;
+        137 │ + ······s.x·-=·bbox.x;
+    138 138 │         s.y = s.y - bbox.y;
+    139 139 │       } else {
+  
+
+src/lib/clipboard/copy.ts:138:7 lint/style/useShorthandAssign  FIXABLE  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Assignment (=) can be replaced with operator assignment -=.
+  
+    136 │       s.endPoint = { x: s.endPoint.x - bbox.x, y: s.endPoint.y - bbox.y };
+    137 │       s.x = s.x - bbox.x;
+  > 138 │       s.y = s.y - bbox.y;
+        │       ^^^^^^^^^^^^^^^^^^
+    139 │     } else {
+    140 │       s.x = s.x - bbox.x;
+  
+  i Unsafe fix: Use -= instead.
+  
+    136 136 │         s.endPoint = { x: s.endPoint.x - bbox.x, y: s.endPoint.y - bbox.y };
+    137 137 │         s.x = s.x - bbox.x;
+    138     │ - ······s.y·=·s.y·-·bbox.y;
+        138 │ + ······s.y·-=·bbox.y;
+    139 139 │       } else {
+    140 140 │         s.x = s.x - bbox.x;
+  
+
+src/lib/clipboard/copy.ts:140:7 lint/style/useShorthandAssign  FIXABLE  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Assignment (=) can be replaced with operator assignment -=.
+  
+    138 │       s.y = s.y - bbox.y;
+    139 │     } else {
+  > 140 │       s.x = s.x - bbox.x;
+        │       ^^^^^^^^^^^^^^^^^^
+    141 │       s.y = s.y - bbox.y;
+    142 │     }
+  
+  i Unsafe fix: Use -= instead.
+  
+    138 138 │         s.y = s.y - bbox.y;
+    139 139 │       } else {
+    140     │ - ······s.x·=·s.x·-·bbox.x;
+        140 │ + ······s.x·-=·bbox.x;
+    141 141 │         s.y = s.y - bbox.y;
+    142 142 │       }
+  
+
+src/lib/clipboard/copy.ts:141:7 lint/style/useShorthandAssign  FIXABLE  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Assignment (=) can be replaced with operator assignment -=.
+  
+    139 │     } else {
+    140 │       s.x = s.x - bbox.x;
+  > 141 │       s.y = s.y - bbox.y;
+        │       ^^^^^^^^^^^^^^^^^^
+    142 │     }
+    143 │     return s;
+  
+  i Unsafe fix: Use -= instead.
+  
+    139 139 │       } else {
+    140 140 │         s.x = s.x - bbox.x;
+    141     │ - ······s.y·=·s.y·-·bbox.y;
+        141 │ + ······s.y·-=·bbox.y;
+    142 142 │       }
+    143 143 │       return s;
+  
+
+src/lib/store/shapes.ts:198:22 lint/style/useAtIndex  FIXABLE  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Prefer X.at(-Y) over X[X.length - Y].
+  
+    196 │     const connectors: ElbowConnectorShape[] = [];
+    197 │     if (parentBoxes.length > 0) {
+  > 198 │       const parent = parentBoxes[parentBoxes.length - 1];
+        │                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    199 │       // Will be positioned properly after layout
+    200 │       const connector: ElbowConnectorShape = {
+  
+  i Using .at() is more convenient and is easier to read.
+  
+  i Unsafe fix: Use .at().
+  
+     196  196 │       const connectors: ElbowConnectorShape[] = [];
+     197  197 │       if (parentBoxes.length > 0) {
+     198      │ - ······const·parent·=·parentBoxes[parentBoxes.length·-·1];
+          198 │ + ······const·parent·=·parentBoxes.at(-1);
+     199  199 │         // Will be positioned properly after layout
+     200  200 │         const connector: ElbowConnectorShape = {
+  
+
+src/lib/store/shapes.ts:366:22 lint/style/noNonNullAssertion ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Forbidden non-null assertion.
+  
+    364 │           shape.startBinding = {
+    365 │             ...shape.startBinding,
+  > 366 │             shapeId: idMap.get(shape.startBinding.shapeId)!,
+        │                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    367 │           };
+    368 │         }
+  
+
+src/lib/store/shapes.ts:372:22 lint/style/noNonNullAssertion ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Forbidden non-null assertion.
+  
+    370 │           shape.endBinding = {
+    371 │             ...shape.endBinding,
+  > 372 │             shapeId: idMap.get(shape.endBinding.shapeId)!,
+        │                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    373 │           };
+    374 │         }
+  
+
+src/lib/store/shapes.ts:586:30 lint/style/noNonNullAssertion ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Forbidden non-null assertion.
+  
+    584 │           return {
+    585 │             ...s,
+  > 586 │             endBinding: { ...s.endBinding!, side: newSide },
+        │                              ^^^^^^^^^^^^^
+    587 │           } as Shape;
+    588 │         }
+  
+
+src/lib/store/shapes.ts:714:15 lint/suspicious/useIterableCallbackReturn ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × This callback passed to forEach() iterable method should not return a value.
+  
+    712 │     // Just place them below or keep original position?
+    713 │     // Let's place them at the bottom.
+  > 714 │     unvisited.forEach((box) => positionedBoxes.push(box));
+        │               ^^^^^^^
+    715 │   }
+    716 │ 
+  
+  i Either remove this return or remove the returned value.
+  
+    712 │     // Just place them below or keep original position?
+    713 │     // Let's place them at the bottom.
+  > 714 │     unvisited.forEach((box) => positionedBoxes.push(box));
+        │                                ^^^^^^^^^^^^^^^^^^^^^^^^^
+    715 │   }
+    716 │ 
+  
+
+src/lib/store/shapes.ts:753:5 lint/style/noNonNullAssertion  FIXABLE  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Forbidden non-null assertion.
+  
+    752 │     if (!childrenMap.has(parentId)) childrenMap.set(parentId, []);
+  > 753 │     childrenMap.get(parentId)!.push(childId);
+        │     ^^^^^^^^^^^^^^^^^^^^^^^^^^
+    754 │   });
+    755 │ 
+  
+  i Unsafe fix: Replace with optional chain operator ?. This operator includes runtime checks, so it is safer than the compile-only non-null assertion operator
+  
+     751  751 │   
+     752  752 │       if (!childrenMap.has(parentId)) childrenMap.set(parentId, []);
+     753      │ - ····childrenMap.get(parentId)!.push(childId);
+          753 │ + ····childrenMap.get(parentId)?.push(childId);
+     754  754 │     });
+     755  755 │   
+  
+
+Checked 38 files in 46ms. No fixes applied.
+Found 19 errors.
+check ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Some errors were emitted while running checks.
+  
+
+Error: Lint errors found
+    at <anonymous> (/home/frsswq/code/shape-builder/node_modules/ultracite/dist/index.js:313:13049)
+    at async resolveMiddleware (/home/frsswq/code/shape-builder/node_modules/@trpc/server/dist/initTRPC-T5bbc89W.mjs:221:23)
+    at async callRecursive (/home/frsswq/code/shape-builder/node_modules/@trpc/server/dist/initTRPC-T5bbc89W.mjs:256:24)
+    at processTicksAndRejections (native:7:39)
+error: script "check" exited with code 1

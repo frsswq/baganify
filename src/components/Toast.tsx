@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect } from "react";
 
 interface ToastProps {
   message: string;
@@ -19,7 +19,7 @@ export function Toast({ message, visible, onClose }: ToastProps) {
   if (!visible) return null;
 
   return (
-    <div className="fixed bottom-20 left-1/2 -translate-x-1/2 bg-gray-900 text-white px-4 py-2 rounded-md shadow-lg text-sm font-medium z-50 animate-in fade-in slide-in-from-bottom-2 duration-200">
+    <div className="fade-in slide-in-from-bottom-2 fixed bottom-20 left-1/2 z-50 -translate-x-1/2 animate-in rounded-md bg-gray-900 px-4 py-2 font-medium text-sm text-white shadow-lg duration-200">
       {message}
     </div>
   );

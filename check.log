@@ -1,0 +1,368 @@
+$ ultracite check
+src/components/ColorPicker.tsx:141:7 lint/style/noNestedTernary ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Do not nest ternary expressions.
+  
+    139 │   const autoLabel = isText
+    140 │     ? "Automatic"
+  > 141 │     : type === "stroke"
+        │       ^^^^^^^^^^^^^^^^^
+  > 142 │       ? "No Outline"
+  > 143 │       : "No Fill";
+        │       ^^^^^^^^^^^
+    144 │   const autoColor = isText ? "#000000" : "none"; // 'none' translates to transparent in our renderer
+    145 │ 
+  
+  i Nesting ternary expressions can make code more difficult to understand.
+  
+  i Convert nested ternary expression into if-else statements or separate the conditions to make the logic easier to understand.
+  
+
+src/components/ColorPicker.tsx lint/style/useFilenamingConvention ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × The filename should be in kebab-case.
+  
+  i The filename could be renamed to one of the following names:
+    color-picker.tsx
+  
+
+src/components/ColorPicker.tsx:189:11 lint/a11y/useButtonType ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Provide an explicit type prop for the button element.
+  
+    187 │         <div className="flex flex-col">
+    188 │           {/* Top Section: Automatic / No Fill */}
+  > 189 │           <button
+        │           ^^^^^^^
+  > 190 │             className={cn(
+         ...
+  > 194 │             onClick={() => handleColorClick(autoColor)}
+  > 195 │           >
+        │           ^
+    196 │             <div className="relative flex h-5 w-5 items-center justify-center border border-gray-300 bg-white shadow-sm">
+    197 │               {isText ? (
+  
+  i The default type of a button is submit, which causes the submission of a form when placed inside a `form` element. This is likely not the behaviour that you want inside a React application.
+  
+  i Allowed button types are: submit, button or reset
+  
+
+src/components/ColorPicker.tsx:220:38 lint/suspicious/noArrayIndexKey ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Avoid using the index of an array as key property in an element.
+  
+    218 │             <div className="grid grid-cols-10 gap-[1px]">
+    219 │               {THEME_COLORS.map((row, rowIndex) => (
+  > 220 │                 <React.Fragment key={rowIndex}>
+        │                                      ^^^^^^^^
+    221 │                   {row.map((c, colIndex) => (
+    222 │                     <ColorSwatch
+  
+  i This is the source of the key value.
+  
+    217 │             </div>
+    218 │             <div className="grid grid-cols-10 gap-[1px]">
+  > 219 │               {THEME_COLORS.map((row, rowIndex) => (
+        │                                       ^^^^^^^^
+    220 │                 <React.Fragment key={rowIndex}>
+    221 │                   {row.map((c, colIndex) => (
+  
+  i The order of the items may change, and this also affects performances and component state.
+  
+  i Check the React documentation. 
+  
+
+src/components/ColorPicker.tsx:226:43 lint/suspicious/noArrayIndexKey ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Avoid using the index of an array as key property in an element.
+  
+    224 │                       color={c}
+    225 │                       isSelected={c.toLowerCase() === color.toLowerCase()}
+  > 226 │                       key={`${rowIndex}-${colIndex}`}
+        │                                           ^^^^^^^^
+    227 │                       onClick={() => handleColorClick(c)} // Spacing after first row
+    228 │                     />
+  
+  i This is the source of the key value.
+  
+    219 │               {THEME_COLORS.map((row, rowIndex) => (
+    220 │                 <React.Fragment key={rowIndex}>
+  > 221 │                   {row.map((c, colIndex) => (
+        │                                ^^^^^^^^
+    222 │                     <ColorSwatch
+    223 │                       className={rowIndex === 0 ? "mb-1" : ""}
+  
+  i The order of the items may change, and this also affects performances and component state.
+  
+  i Check the React documentation. 
+  
+
+src/components/ColorPicker.tsx:255:11 lint/a11y/useButtonType ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Provide an explicit type prop for the button element.
+  
+    254 │           {/* More Colors */}
+  > 255 │           <button
+        │           ^^^^^^^
+  > 256 │             className="flex items-center gap-3 border border-transparent px-3 py-1.5 text-left transition-none hover:bg-[#fde7ad] hover:outline hover:outline-1 hover:outline-[#e5c365]"
+  > 257 │             onClick={handleNativeClick}
+  > 258 │           >
+        │           ^
+    259 │             <PaletteIcon className="h-4 w-4 text-gray-700" />
+    260 │             <span className="text-gray-800 text-xs">More Colors...</span>
+  
+  i The default type of a button is submit, which causes the submission of a form when placed inside a `form` element. This is likely not the behaviour that you want inside a React application.
+  
+  i Allowed button types are: submit, button or reset
+  
+
+src/components/ExportPanel.tsx:10:5 lint/style/useBlockStatements  FIXABLE  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Block statements are preferred in this position.
+  
+     9 │   const handleCopy = async () => {
+  > 10 │     if (shapes.length === 0) return;
+       │     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    11 │ 
+    12 │     try {
+  
+  i Unsafe fix: Wrap the statement with a `JsBlockStatement`
+  
+    10 │ ····if·(shapes.length·===·0)·{·return;·}
+       │                              ++       ++
+
+src/components/ExportPanel.tsx:23:5 lint/style/useBlockStatements  FIXABLE  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Block statements are preferred in this position.
+  
+    22 │   const handleDownload = () => {
+  > 23 │     if (shapes.length === 0) return;
+       │     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    24 │     downloadAsSVG(shapes, "shapes.svg");
+    25 │   };
+  
+  i Unsafe fix: Wrap the statement with a `JsBlockStatement`
+  
+    23 │ ····if·(shapes.length·===·0)·{·return;·}
+       │                              ++       ++
+
+src/components/ExportPanel.tsx:27:3 lint/style/useBlockStatements  FIXABLE  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Block statements are preferred in this position.
+  
+    25 │   };
+    26 │ 
+  > 27 │   if (shapes.length === 0) return null;
+       │   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    28 │ 
+    29 │   return (
+  
+  i Unsafe fix: Wrap the statement with a `JsBlockStatement`
+  
+    27 │ ··if·(shapes.length·===·0)·{·return·null;·}
+       │                            ++            ++
+
+src/components/ExportPanel.tsx:58:5 lint/a11y/noSvgWithoutTitle ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Alternative text title element cannot be empty
+  
+    56 │ function CopyIcon() {
+    57 │   return (
+  > 58 │     <svg
+       │     ^^^^
+  > 59 │       fill="none"
+        ...
+  > 64 │       width="14"
+  > 65 │     >
+       │     ^
+    66 │       <rect height="13" rx="2" width="13" x="9" y="9" />
+    67 │       <path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1" />
+  
+  i For accessibility purposes, SVGs should have an alternative text, provided via title element. If the svg element has role="img", you should add the aria-label or aria-labelledby attribute.
+  
+
+src/components/ExportPanel.tsx:74:5 lint/a11y/noSvgWithoutTitle ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Alternative text title element cannot be empty
+  
+    72 │ function CheckIcon() {
+    73 │   return (
+  > 74 │     <svg
+       │     ^^^^
+  > 75 │       fill="none"
+        ...
+  > 80 │       width="14"
+  > 81 │     >
+       │     ^
+    82 │       <path d="M20 6L9 17l-5-5" strokeLinecap="round" strokeLinejoin="round" />
+    83 │     </svg>
+  
+  i For accessibility purposes, SVGs should have an alternative text, provided via title element. If the svg element has role="img", you should add the aria-label or aria-labelledby attribute.
+  
+
+src/components/ExportPanel.tsx:89:5 lint/a11y/noSvgWithoutTitle ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Alternative text title element cannot be empty
+  
+    87 │ function DownloadIcon() {
+    88 │   return (
+  > 89 │     <svg
+       │     ^^^^
+  > 90 │       fill="none"
+        ...
+  > 95 │       width="14"
+  > 96 │     >
+       │     ^
+    97 │       <path
+    98 │         d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3"
+  
+  i For accessibility purposes, SVGs should have an alternative text, provided via title element. If the svg element has role="img", you should add the aria-label or aria-labelledby attribute.
+  
+
+src/components/ExportPanel.tsx lint/style/useFilenamingConvention ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × The filename should be in kebab-case.
+  
+  i The filename could be renamed to one of the following names:
+    export-panel.tsx
+  
+
+src/components/ExportPanel.tsx:31:7 lint/a11y/useButtonType ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Provide an explicit type prop for the button element.
+  
+    29 │   return (
+    30 │     <div className="flex gap-1 rounded-lg border border-gray-200 bg-white p-2 shadow-lg">
+  > 31 │       <button
+       │       ^^^^^^^
+  > 32 │         className={`flex items-center gap-1.5 rounded px-3 py-1.5 text-xs transition-colors ${
+        ...
+  > 38 │         title="Copy to clipboard (paste in Office)"
+  > 39 │       >
+       │       ^
+    40 │         {status === "success" ? <CheckIcon /> : <CopyIcon />}
+    41 │         {status === "success" ? "Copied!" : "Copy"}
+  
+  i The default type of a button is submit, which causes the submission of a form when placed inside a `form` element. This is likely not the behaviour that you want inside a React application.
+  
+  i Allowed button types are: submit, button or reset
+  
+
+src/components/ExportPanel.tsx:44:7 lint/a11y/useButtonType ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Provide an explicit type prop for the button element.
+  
+    42 │       </button>
+    43 │ 
+  > 44 │       <button
+       │       ^^^^^^^
+  > 45 │         className="flex items-center gap-1.5 rounded px-3 py-1.5 text-gray-600 text-xs transition-colors hover:bg-gray-100"
+  > 46 │         onClick={handleDownload}
+  > 47 │         title="Download as SVG"
+  > 48 │       >
+       │       ^
+    49 │         <DownloadIcon />
+    50 │         Export
+  
+  i The default type of a button is submit, which causes the submission of a form when placed inside a `form` element. This is likely not the behaviour that you want inside a React application.
+  
+  i Allowed button types are: submit, button or reset
+  
+
+src/components/LayoutSettings.tsx lint/style/useFilenamingConvention ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × The filename should be in kebab-case.
+  
+  i The filename could be renamed to one of the following names:
+    layout-settings.tsx
+  
+
+src/components/LayoutSettings.tsx:14:10 lint/suspicious/noGlobalIsNan  FIXABLE  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × isNaN is unsafe. It attempts a type coercion. Use Number.isNaN instead.
+  
+    12 │   const handleInputChange = (key: keyof typeof layoutParams, value: string) => {
+    13 │     const numValue = Number.parseInt(value, 10);
+  > 14 │     if (!isNaN(numValue)) {
+       │          ^^^^^
+    15 │       setLayoutParams({ [key]: numValue });
+    16 │     }
+  
+  i See the MDN documentation for more details.
+  
+  i Unsafe fix: Use Number.isNaN instead.
+  
+    12 12 │     const handleInputChange = (key: keyof typeof layoutParams, value: string) => {
+    13 13 │       const numValue = Number.parseInt(value, 10);
+    14    │ - ····if·(!isNaN(numValue))·{
+       14 │ + ····if·(!Number.isNaN(numValue))·{
+    15 15 │         setLayoutParams({ [key]: numValue });
+    16 16 │       }
+  
+
+src/components/Toast.tsx:19:3 lint/style/useBlockStatements  FIXABLE  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Block statements are preferred in this position.
+  
+    17 │   }, [visible, onClose]);
+    18 │ 
+  > 19 │   if (!visible) return null;
+       │   ^^^^^^^^^^^^^^^^^^^^^^^^^^
+    20 │ 
+    21 │   return (
+  
+  i Unsafe fix: Wrap the statement with a `JsBlockStatement`
+  
+    19 │ ··if·(!visible)·{·return·null;·}
+       │                 ++            ++
+
+src/components/Toast.tsx lint/style/useFilenamingConvention ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × The filename should be in kebab-case.
+  
+  i The filename could be renamed to one of the following names:
+    toast.tsx
+  
+
+vite.config.ts:1:1 assist/source/organizeImports  FIXABLE  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × The imports and exports are not sorted.
+  
+  > 1 │ import tailwindcss from "@tailwindcss/vite";
+      │ ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    2 │ import { devtools } from "@tanstack/devtools-vite";
+    3 │ import { tanstackStart } from "@tanstack/react-start/plugin/vite";
+  
+  i Safe fix: Organize Imports (Biome)
+  
+     1    │ - import·tailwindcss·from·"@tailwindcss/vite";
+     2    │ - import·{·devtools·}·from·"@tanstack/devtools-vite";
+     3    │ - import·{·tanstackStart·}·from·"@tanstack/react-start/plugin/vite";
+     4    │ - import·viteReact·from·"@vitejs/plugin-react";
+     5    │ - import·{·nitro·}·from·"nitro/vite";
+     6    │ - import·{·fileURLToPath,·URL·}·from·"node:url";
+        1 │ + import·{·fileURLToPath,·URL·}·from·"node:url";
+        2 │ + import·tailwindcss·from·"@tailwindcss/vite";
+        3 │ + import·{·devtools·}·from·"@tanstack/devtools-vite";
+        4 │ + import·{·tanstackStart·}·from·"@tanstack/react-start/plugin/vite";
+        5 │ + import·viteReact·from·"@vitejs/plugin-react";
+        6 │ + import·{·nitro·}·from·"nitro/vite";
+     7  7 │   import { defineConfig } from "vite";
+     8  8 │   import viteTsConfigPaths from "vite-tsconfig-paths";
+  
+
+The number of diagnostics exceeds the limit allowed. Use --max-diagnostics to increase it.
+Diagnostics not shown: 91.
+Checked 38 files in 56ms. No fixes applied.
+Found 111 errors.
+check ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Some errors were emitted while running checks.
+  
+
+Error: Lint errors found
+    at <anonymous> (/home/frsswq/code/shape-builder/node_modules/ultracite/dist/index.js:313:13049)
+    at async resolveMiddleware (/home/frsswq/code/shape-builder/node_modules/@trpc/server/dist/initTRPC-T5bbc89W.mjs:221:23)
+    at async callRecursive (/home/frsswq/code/shape-builder/node_modules/@trpc/server/dist/initTRPC-T5bbc89W.mjs:256:24)
+    at processTicksAndRejections (native:7:39)
+error: script "check" exited with code 1

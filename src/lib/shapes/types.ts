@@ -1,7 +1,12 @@
 // Shape type definitions for the shape builder
 
-export type ShapeType = 'rectangle' | 'ellipse' | 'triangle' | 'text' | 'elbow-connector';
-export type ArrowheadType = 'none' | 'arrow' | 'bar';
+export type ShapeType =
+  | "rectangle"
+  | "ellipse"
+  | "triangle"
+  | "text"
+  | "elbow-connector";
+export type ArrowheadType = "none" | "arrow" | "bar";
 
 export interface Point {
   x: number;
@@ -20,11 +25,11 @@ export interface BaseShape {
   // Stacked effect for multiple people/items
   stacked?: boolean;
   // Layout for org chart children
-  childLayout?: 'horizontal' | 'vertical';
+  childLayout?: "horizontal" | "vertical";
 }
 
 export interface RectangleShape extends BaseShape {
-  type: 'rectangle';
+  type: "rectangle";
   width: number;
   height: number;
   cornerRadius: number;
@@ -37,7 +42,7 @@ export interface RectangleShape extends BaseShape {
 }
 
 export interface EllipseShape extends BaseShape {
-  type: 'ellipse';
+  type: "ellipse";
   width: number;
   height: number;
   // Embedded text label
@@ -49,17 +54,17 @@ export interface EllipseShape extends BaseShape {
 }
 
 export interface TriangleShape extends BaseShape {
-  type: 'triangle';
+  type: "triangle";
   width: number;
   height: number;
 }
 
 export interface TextShape extends BaseShape {
-  type: 'text';
+  type: "text";
   text: string;
   fontSize: number;
   fontFamily: string;
-  textAlign: 'left' | 'center' | 'right';
+  textAlign: "left" | "center" | "right";
   width: number;
   height: number;
 }
@@ -67,14 +72,14 @@ export interface TextShape extends BaseShape {
 // Binding info for connectors
 export interface ConnectorBinding {
   shapeId: string;
-  side: 'top' | 'right' | 'bottom' | 'left' | 'center';
+  side: "top" | "right" | "bottom" | "left" | "center";
 }
 
 export interface ElbowConnectorShape extends BaseShape {
-  type: 'elbow-connector';
+  type: "elbow-connector";
   startPoint: Point;
   endPoint: Point;
-  startDirection: 'horizontal' | 'vertical';
+  startDirection: "horizontal" | "vertical";
   // Bindings to shapes (optional - connector can be free-floating)
   startBinding?: ConnectorBinding;
   endBinding?: ConnectorBinding;
@@ -83,21 +88,31 @@ export interface ElbowConnectorShape extends BaseShape {
   endArrowhead: ArrowheadType;
 }
 
-export type Shape = RectangleShape | EllipseShape | TriangleShape | TextShape | ElbowConnectorShape;
+export type Shape =
+  | RectangleShape
+  | EllipseShape
+  | TriangleShape
+  | TextShape
+  | ElbowConnectorShape;
 
 // Default values
-export const DEFAULT_FILL = '#ffffff';
-export const DEFAULT_STROKE = '#000000';
+export const DEFAULT_FILL = "#ffffff";
+export const DEFAULT_STROKE = "#000000";
 export const DEFAULT_STROKE_WIDTH = 1.25;
 
 export function createId(): string {
   return Math.random().toString(36).substring(2, 11);
 }
 
-export function createRectangle(x: number, y: number, label = '', level = 0): RectangleShape {
+export function createRectangle(
+  x: number,
+  y: number,
+  label = "",
+  level = 0
+): RectangleShape {
   return {
     id: createId(),
-    type: 'rectangle',
+    type: "rectangle",
     x,
     y,
     width: 140,
@@ -109,16 +124,21 @@ export function createRectangle(x: number, y: number, label = '', level = 0): Re
     cornerRadius: 0,
     label,
     labelFontSize: 10,
-    labelColor: '#000000',
+    labelColor: "#000000",
     level,
     stacked: false,
   };
 }
 
-export function createEllipse(x: number, y: number, label = '', level = 0): EllipseShape {
+export function createEllipse(
+  x: number,
+  y: number,
+  label = "",
+  level = 0
+): EllipseShape {
   return {
     id: createId(),
-    type: 'ellipse',
+    type: "ellipse",
     x,
     y,
     width: 100,
@@ -129,7 +149,7 @@ export function createEllipse(x: number, y: number, label = '', level = 0): Elli
     rotation: 0,
     label,
     labelFontSize: 10,
-    labelColor: '#000000',
+    labelColor: "#000000",
     level,
     stacked: false,
   };
@@ -138,7 +158,7 @@ export function createEllipse(x: number, y: number, label = '', level = 0): Elli
 export function createTriangle(x: number, y: number): TriangleShape {
   return {
     id: createId(),
-    type: 'triangle',
+    type: "triangle",
     x,
     y,
     width: 100,
@@ -150,20 +170,20 @@ export function createTriangle(x: number, y: number): TriangleShape {
   };
 }
 
-export function createText(x: number, y: number, text = 'Text'): TextShape {
+export function createText(x: number, y: number, text = "Text"): TextShape {
   return {
     id: createId(),
-    type: 'text',
+    type: "text",
     x,
     y,
     text,
     fontSize: 10,
-    fontFamily: 'Arial, sans-serif',
-    textAlign: 'center',
+    fontFamily: "Arial, sans-serif",
+    textAlign: "center",
     width: 100,
     height: 30,
     fill: DEFAULT_STROKE, // Text uses stroke color as fill
-    stroke: 'none',
+    stroke: "none",
     strokeWidth: 0,
     rotation: 0,
   };
@@ -172,25 +192,25 @@ export function createText(x: number, y: number, text = 'Text'): TextShape {
 // Used when shapes are connected
 export function createBoundConnector(
   startShapeId: string,
-  startSide: ConnectorBinding['side'],
+  startSide: ConnectorBinding["side"],
   endShapeId: string,
-  endSide: ConnectorBinding['side'],
+  endSide: ConnectorBinding["side"],
   startPoint: Point,
   endPoint: Point
 ): ElbowConnectorShape {
   return {
     id: createId(),
-    type: 'elbow-connector',
+    type: "elbow-connector",
     x: Math.min(startPoint.x, endPoint.x),
     y: Math.min(startPoint.y, endPoint.y),
     startPoint,
     endPoint,
-    startDirection: 'horizontal',
+    startDirection: "horizontal",
     startBinding: { shapeId: startShapeId, side: startSide },
     endBinding: { shapeId: endShapeId, side: endSide },
-    startArrowhead: 'none',
-    endArrowhead: 'arrow',
-    fill: 'none',
+    startArrowhead: "none",
+    endArrowhead: "arrow",
+    fill: "none",
     stroke: DEFAULT_STROKE,
     strokeWidth: DEFAULT_STROKE_WIDTH,
     rotation: 0,
@@ -198,18 +218,23 @@ export function createBoundConnector(
 }
 
 // Free-floating connector (not bound to shapes)
-export function createElbowConnector(startX: number, startY: number, endX: number, endY: number): ElbowConnectorShape {
+export function createElbowConnector(
+  startX: number,
+  startY: number,
+  endX: number,
+  endY: number
+): ElbowConnectorShape {
   return {
     id: createId(),
-    type: 'elbow-connector',
+    type: "elbow-connector",
     x: Math.min(startX, endX),
     y: Math.min(startY, endY),
     startPoint: { x: startX, y: startY },
     endPoint: { x: endX, y: endY },
-    startDirection: 'horizontal',
-    startArrowhead: 'none',
-    endArrowhead: 'arrow',
-    fill: 'none',
+    startDirection: "horizontal",
+    startArrowhead: "none",
+    endArrowhead: "arrow",
+    fill: "none",
     stroke: DEFAULT_STROKE,
     strokeWidth: DEFAULT_STROKE_WIDTH,
     rotation: 0,
@@ -217,71 +242,91 @@ export function createElbowConnector(startX: number, startY: number, endX: numbe
 }
 
 // Get connection point on a shape's side
-export function getShapeConnectionPoint(shape: Shape, side: ConnectorBinding['side']): Point {
-  if (shape.type === 'elbow-connector') {
+export function getShapeConnectionPoint(
+  shape: Shape,
+  side: ConnectorBinding["side"]
+): Point {
+  if (shape.type === "elbow-connector") {
     return { x: shape.x, y: shape.y };
   }
-  
-  const width = 'width' in shape ? shape.width : 0;
-  const height = 'height' in shape ? shape.height : 0;
+
+  const width = "width" in shape ? shape.width : 0;
+  const height = "height" in shape ? shape.height : 0;
   const cx = shape.x + width / 2;
   const cy = shape.y + height / 2;
-  
+
   switch (side) {
-    case 'top': return { x: cx, y: shape.y };
-    case 'right': return { x: shape.x + width, y: cy };
-    case 'bottom': return { x: cx, y: shape.y + height };
-    case 'left': return { x: shape.x, y: cy };
-    case 'center': return { x: cx, y: cy };
-    default: return { x: cx, y: cy };
+    case "top":
+      return { x: cx, y: shape.y };
+    case "right":
+      return { x: shape.x + width, y: cy };
+    case "bottom":
+      return { x: cx, y: shape.y + height };
+    case "left":
+      return { x: shape.x, y: cy };
+    case "center":
+      return { x: cx, y: cy };
+    default:
+      return { x: cx, y: cy };
   }
 }
 
 // Determine best connection side based on relative positions
-export function getBestConnectionSide(fromShape: Shape, toShape: Shape): { fromSide: ConnectorBinding['side']; toSide: ConnectorBinding['side'] } {
+export function getBestConnectionSide(
+  fromShape: Shape,
+  toShape: Shape
+): { fromSide: ConnectorBinding["side"]; toSide: ConnectorBinding["side"] } {
   const from = getShapeCenter(fromShape);
   const to = getShapeCenter(toShape);
-  
+
   const dx = to.x - from.x;
   const dy = to.y - from.y;
-  
-  let fromSide: ConnectorBinding['side'];
-  let toSide: ConnectorBinding['side'];
-  
+
+  let fromSide: ConnectorBinding["side"];
+  let toSide: ConnectorBinding["side"];
+
   if (Math.abs(dx) > Math.abs(dy)) {
     // Horizontal connection
-    fromSide = dx > 0 ? 'right' : 'left';
-    toSide = dx > 0 ? 'left' : 'right';
+    fromSide = dx > 0 ? "right" : "left";
+    toSide = dx > 0 ? "left" : "right";
   } else {
     // Vertical connection
-    fromSide = dy > 0 ? 'bottom' : 'top';
-    toSide = dy > 0 ? 'top' : 'bottom';
+    fromSide = dy > 0 ? "bottom" : "top";
+    toSide = dy > 0 ? "top" : "bottom";
   }
-  
+
   return { fromSide, toSide };
 }
 
 function getShapeCenter(shape: Shape): Point {
-  if (shape.type === 'elbow-connector') {
-    return { x: (shape.startPoint.x + shape.endPoint.x) / 2, y: (shape.startPoint.y + shape.endPoint.y) / 2 };
+  if (shape.type === "elbow-connector") {
+    return {
+      x: (shape.startPoint.x + shape.endPoint.x) / 2,
+      y: (shape.startPoint.y + shape.endPoint.y) / 2,
+    };
   }
-  const width = 'width' in shape ? shape.width : 0;
-  const height = 'height' in shape ? shape.height : 0;
+  const width = "width" in shape ? shape.width : 0;
+  const height = "height" in shape ? shape.height : 0;
   return { x: shape.x + width / 2, y: shape.y + height / 2 };
 }
 
 // Get shape bounds for hit testing
-export function getShapeBounds(shape: Shape): { x: number; y: number; width: number; height: number } {
-  if (shape.type === 'elbow-connector') {
+export function getShapeBounds(shape: Shape): {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+} {
+  if (shape.type === "elbow-connector") {
     const minX = Math.min(shape.startPoint.x, shape.endPoint.x);
     const minY = Math.min(shape.startPoint.y, shape.endPoint.y);
     const maxX = Math.max(shape.startPoint.x, shape.endPoint.x);
     const maxY = Math.max(shape.startPoint.y, shape.endPoint.y);
     return { x: minX, y: minY, width: maxX - minX, height: maxY - minY };
   }
-  
-  const width = 'width' in shape ? shape.width : 0;
-  const height = 'height' in shape ? shape.height : 0;
+
+  const width = "width" in shape ? shape.width : 0;
+  const height = "height" in shape ? shape.height : 0;
   return { x: shape.x, y: shape.y, width, height };
 }
 
