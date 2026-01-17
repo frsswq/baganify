@@ -9,7 +9,7 @@ import type {
 } from "../lib/shapes/types";
 import { boundsIntersect } from "../lib/shapes/types";
 import { useShapeStore } from "../lib/store/shapes";
-import { Toast } from "./Toast";
+import { Toast } from "./toast";
 
 interface SelectionRect {
   startX: number;
@@ -49,7 +49,9 @@ export function Canvas() {
 
   // Report size to store for centering
   useEffect(() => {
-    if (!containerRef.current) return;
+    if (!containerRef.current) {
+      return;
+    }
 
     // Use ResizeObserver for more robust zoom/layout handling
     const resizeObserver = new ResizeObserver((entries) => {
@@ -72,55 +74,89 @@ export function Canvas() {
   }, [setCanvasSize]);
 
   useEffect(() => {
-    const handleKeyDown = async (e: KeyboardEvent) => {
-      if ((e.ctrlKey || e.metaKey) && e.key === "c") {
-        if (editingId) return;
-        e.preventDefault();
-
-        // Internal copy
-        copySelected();
-
-        // System clipboard copy (SVG)
-        const selectedShapes = shapes.filter((s) => selectedIds.has(s.id));
-        if (selectedShapes.length > 0) {
-          try {
-            await copyShapesToClipboard(selectedShapes);
-            setToast({ visible: true, message: "Copied to clipboard" });
-          } catch (err) {
-            console.error("Failed to copy to clipboard", err);
-            // Still show toast if internal copy worked, but maybe different message?
-            // User mostly cares about "it worked"
-            setToast({ visible: true, message: "Copied to clipboard" });
-          }
+    const handleCopy = async (e: KeyboardEvent) => {
+      if (!((e.ctrlKey || e.metaKey) && e.key === "c")) {
+        return false;
+      }
+      if (editingId) {
+        return true;
+      }
+      e.preventDefault();
+      copySelected();
+      const selectedShapes = shapes.filter((s) => selectedIds.has(s.id));
+      if (selectedShapes.length > 0) {
+        try {
+          await copyShapesToClipboard(selectedShapes);
+          setToast({ visible: true, message: "Copied to clipboard" });
+        } catch (err) {
+          console.error("Failed to copy", err);
+          setToast({ visible: true, message: "Copied to clipboard" });
         }
-        return;
       }
-      if ((e.ctrlKey || e.metaKey) && e.key === "v") {
-        if (editingId) return;
-        e.preventDefault();
-        pasteClipboard();
-        setToast({ visible: true, message: "Pasted from clipboard" });
-        return;
+      return true;
+    };
+
+    const handlePaste = (e: KeyboardEvent) => {
+      if (!((e.ctrlKey || e.metaKey) && e.key === "v")) {
+        return false;
       }
-      if ((e.ctrlKey || e.metaKey) && e.key === "z" && !e.shiftKey) {
+      if (editingId) {
+        return true;
+      }
+      e.preventDefault();
+      pasteClipboard();
+      setToast({ visible: true, message: "Pasted from clipboard" });
+      return true;
+    };
+
+    const handleHistory = (e: KeyboardEvent) => {
+      if (!(e.ctrlKey || e.metaKey)) {
+        return false;
+      }
+      if (e.key === "z" && !e.shiftKey) {
         e.preventDefault();
         undo();
-        return;
+        return true;
       }
-      if ((e.ctrlKey || e.metaKey) && (e.key === "Z" || e.key === "y")) {
+      if (e.key === "Z" || e.key === "y") {
         e.preventDefault();
         redo();
+        return true;
+      }
+      return false;
+    };
+
+    const handleDelete = (e: KeyboardEvent) => {
+      if (e.key !== "Delete" && e.key !== "Backspace") {
+        return false;
+      }
+      if (editingId) {
+        return true;
+      }
+      e.preventDefault();
+      deleteSelected();
+      return true;
+    };
+
+    const handleKeyDown = async (e: KeyboardEvent) => {
+      if (await handleCopy(e)) {
         return;
       }
-      if (e.key === "Delete" || e.key === "Backspace") {
-        if (editingId) return;
-        e.preventDefault();
-        deleteSelected();
+      if (handlePaste(e)) {
+        return;
       }
+      if (handleHistory(e)) {
+        return;
+      }
+      if (handleDelete(e)) {
+        return;
+      }
+
       if (e.key === "Escape") {
         clearSelection();
         setEditingId(null);
       }
+
       // Spacebar for panning
       if (e.code === "Space" && !editingId) {
         isSpacePressed.current = true;
@@ -156,7 +192,9 @@ export function Canvas() {
 
   const getSVGPoint = (clientX: number, clientY: number) => {
     const svg = svgRef.current;
-    if (!svg) return null;
+    if (!svg) {
+      return null;
+    }
     const rect = svg.getBoundingClientRect();
     const x = (clientX - rect.left - viewport.x) / viewport.zoom;
     const y = (clientY - rect.top - viewport.y) / viewport.zoom;
@@ -174,7 +212,9 @@ export function Canvas() {
 
       // Zoom towards mouse
       const rect = svgRef.current?.getBoundingClientRect();
-      if (!rect) return;
+      if (!rect) {
+        return;
+      }
 
       const mouseX = e.clientX - rect.left;
       const mouseY = e.clientY - rect.top;
@@ -207,7 +247,9 @@ export function Canvas() {
     const target = e.target as Element;
     if (target.getAttribute?.("data-canvas") === "true") {
       const svgP = getSVGPoint(e.clientX, e.clientY);
-      if (!svgP) return;
+      if (!svgP) {
+        return;
+      }
       setSelectionRect({
         startX: svgP.x,
         startY: svgP.y,
@@ -229,9 +271,13 @@ export function Canvas() {
       return;
     }
 
-    if (!selectionRect) return;
+    if (!selectionRect) {
+      return;
+    }
     const svgP = getSVGPoint(e.clientX, e.clientY);
-    if (!svgP) return;
+    if (!svgP) {
+      return;
+    }
     setSelectionRect({ ...selectionRect, currentX: svgP.x, currentY: svgP.y });
   };
 
@@ -304,6 +350,7 @@ export function Canvas() {
       className="absolute inset-0 overflow-hidden bg-[#fafafa]"
       ref={containerRef}
     >
+      {/* biome-ignore lint/a11y/noNoninteractiveElementInteractions: Canvas SVG handles specific pointer events */}
       <svg
         className="h-full w-full touch-none select-none"
         height={size.height}
@@ -315,6 +362,7 @@ export function Canvas() {
         ref={svgRef}
         width={size.width}
       >
+        <title>Canvas</title>
         <defs>
           <pattern
             height="20"
@@ -411,7 +459,9 @@ function ShapeRenderer({
   onEditBlur,
 }: ShapeRendererProps) {
   const renderHandles = (x: number, y: number, w: number, h: number) => {
-    if (!isSelected) return null;
+    if (!isSelected) {
+      return null;
+    }
     return (
       <g pointerEvents="none">
         <rect
@@ -430,10 +480,18 @@ function ShapeRenderer({
   switch (shape.type) {
     case "rectangle":
       return (
+        // biome-ignore lint/a11y/useSemanticElements: SVG groups cannot be buttons
         <g
           onClick={onClick}
           onDoubleClick={onDoubleClick}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" || e.key === " ") {
+              onClick(e as unknown as React.MouseEvent);
+            }
+          }}
+          role="button"
           style={{ cursor: "pointer" }}
+          tabIndex={0}
         >
           {shape.stacked && (
             <rect
@@ -535,7 +593,18 @@ function ShapeRenderer({
 
     case "ellipse":
       return (
-        <g onClick={onClick} style={{ cursor: "pointer" }}>
+        // biome-ignore lint/a11y/useSemanticElements: SVG groups cannot be buttons
+        <g
+          onClick={onClick}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" || e.key === " ") {
+              onClick(e as unknown as React.MouseEvent);
+            }
+          }}
+          role="button"
+          style={{ cursor: "pointer" }}
+          tabIndex={0}
+        >
           {shape.stacked && (
             <ellipse
               cx={shape.x + shape.width / 2 + 3}
@@ -635,7 +704,18 @@ function ShapeRenderer({
     case "triangle": {
       const points = `${shape.x + shape.width / 2},${shape.y} ${shape.x},${shape.y + shape.height} ${shape.x + shape.width},${shape.y + shape.height}`;
       return (
-        <g onClick={onClick} style={{ cursor: "pointer" }}>
+        // biome-ignore lint/a11y/useSemanticElements: SVG groups cannot be buttons
+        <g
+          onClick={onClick}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" || e.key === " ") {
+              onClick(e as unknown as React.MouseEvent);
+            }
+          }}
+          role="button"
+          style={{ cursor: "pointer" }}
+          tabIndex={0}
+        >
           <polygon
             fill={shape.fill}
             points={points}
@@ -649,10 +729,18 @@ function ShapeRenderer({
 
     case "text":
       return (
+        // biome-ignore lint/a11y/useSemanticElements: SVG groups cannot be buttons
         <g
           onClick={onClick}
           onDoubleClick={onDoubleClick}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" || e.key === " ") {
+              onClick(e as unknown as React.MouseEvent);
+            }
+          }}
+          role="button"
           style={{ cursor: "pointer" }}
+          tabIndex={0}
         >
           {isEditing ? (
             <foreignObject
@@ -702,7 +790,18 @@ function ShapeRenderer({
     case "elbow-connector": {
       const path = getElbowPath(shape);
       return (
-        <g onClick={onClick} style={{ cursor: "pointer" }}>
+        // biome-ignore lint/a11y/useSemanticElements: SVG groups cannot be buttons
+        <g
+          onClick={onClick}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" || e.key === " ") {
+              onClick(e as unknown as React.MouseEvent);
+            }
+          }}
+          role="button"
+          style={{ cursor: "pointer" }}
+          tabIndex={0}
+        >
           <path d={path} fill="none" stroke="transparent" strokeWidth={10} />
           <path
             d={path}
@@ -741,31 +840,23 @@ function Arrowhead({
   position: "start" | "end";
 }) {
   const type = position === "start" ? shape.startArrowhead : shape.endArrowhead;
-  if (type === "none") return null;
+  if (type === "none") {
+    return null;
+  }
 
   const { startPoint, endPoint, startDirection } = shape;
-  let x: number, y: number, rotation: number;
+  let x: number;
+  let y: number;
+  let rotation: number;
 
   if (position === "start") {
     x = startPoint.x;
     y = startPoint.y;
-    if (startDirection === "horizontal") {
-      const midX = (startPoint.x + endPoint.x) / 2;
-      rotation = midX > startPoint.x ? 180 : 0;
-    } else {
-      const midY = (startPoint.y + endPoint.y) / 2;
-      rotation = midY > startPoint.y ? 270 : 90;
-    }
+    rotation = getArrowRotation(startPoint, endPoint, startDirection, "start");
   } else {
     x = endPoint.x;
     y = endPoint.y;
-    if (startDirection === "horizontal") {
-      const midX = (startPoint.x + endPoint.x) / 2;
-      rotation = endPoint.x > midX ? 0 : 180;
-    } else {
-      const midY = (startPoint.y + endPoint.y) / 2;
-      rotation = endPoint.y > midY ? 90 : 270;
-    }
+    rotation = getArrowRotation(startPoint, endPoint, startDirection, "end");
   }
 
   const transform = `translate(${x}, ${y}) rotate(${rotation})`;
@@ -831,4 +922,26 @@ function getElbowPath(shape: ElbowConnectorShape): string {
   // Horizontal start
   const midX = (startPoint.x + endPoint.x) / 2;
   return `M ${startPoint.x} ${startPoint.y} L ${midX} ${startPoint.y} L ${midX} ${endPoint.y} L ${endPoint.x} ${endPoint.y}`;
+}
+
+function getArrowRotation(
+  startPoint: { x: number; y: number },
+  endPoint: { x: number; y: number },
+  startDirection: "horizontal" | "vertical",
+  position: "start" | "end"
+): number {
+  if (position === "start") {
+    if (startDirection === "horizontal") {
+      const midX = (startPoint.x + endPoint.x) / 2;
+      return midX > startPoint.x ? 180 : 0;
+    }
+    const midY = (startPoint.y + endPoint.y) / 2;
+    return midY > startPoint.y ? 270 : 90;
+  }
+  if (startDirection === "horizontal") {
+    const midX = (startPoint.x + endPoint.x) / 2;
+    return endPoint.x > midX ? 0 : 180;
+  }
+  const midY = (startPoint.y + endPoint.y) / 2;
+  return endPoint.y > midY ? 90 : 270;
 }

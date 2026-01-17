@@ -1,8 +1,8 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { Canvas } from "../components/Canvas";
-import { ExportPanel } from "../components/ExportPanel";
-import { PropertyPanel } from "../components/PropertyPanel";
-import { Toolbar } from "../components/Toolbar";
+import { Canvas } from "../components/canvas";
+import { ExportPanel } from "../components/export-panel";
+import { PropertyPanel } from "../components/property-panel";
+import { Toolbar } from "../components/toolbar";
 import { useShapeStore } from "../lib/store/shapes";
 
 export const Route = createFileRoute("/")({ component: ShapeBuilder });

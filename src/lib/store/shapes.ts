@@ -134,10 +134,14 @@ export const useShapeStore = create<ShapeStore>((set, get) => ({
 
   undo: () => {
     set((state) => {
-      if (state.historyIndex <= 0) return state;
+      if (state.historyIndex <= 0) {
+        return state;
+      }
       const newIndex = state.historyIndex - 1;
       const historyState = state.history[newIndex];
-      if (!historyState) return state;
+      if (!historyState) {
+        return state;
+      }
       return {
         shapes: JSON.parse(JSON.stringify(historyState.shapes)),
         selectedIds: new Set(historyState.selectedIds),
@@ -148,10 +152,14 @@ export const useShapeStore = create<ShapeStore>((set, get) => ({
 
   redo: () => {
     set((state) => {
-      if (state.historyIndex >= state.history.length - 1) return state;
+      if (state.historyIndex >= state.history.length - 1) {
+        return state;
+      }
       const newIndex = state.historyIndex + 1;
       const historyState = state.history[newIndex];
-      if (!historyState) return state;
+      if (!historyState) {
+        return state;
+      }
       return {
         shapes: JSON.parse(JSON.stringify(historyState.shapes)),
         selectedIds: new Set(historyState.selectedIds),
@@ -195,26 +203,28 @@ export const useShapeStore = create<ShapeStore>((set, get) => ({
     // Create auto-connector to last parent if exists
     const connectors: ElbowConnectorShape[] = [];
     if (parentBoxes.length > 0) {
-      const parent = parentBoxes[parentBoxes.length - 1];
-      // Will be positioned properly after layout
-      const connector: ElbowConnectorShape = {
-        id: createId(),
-        type: "elbow-connector",
-        x: 0,
-        y: 0,
-        startPoint: { x: 0, y: 0 },
-        endPoint: { x: 0, y: 0 },
-        startDirection: "vertical",
-        startBinding: { shapeId: parent.id, side: "bottom" },
-        endBinding: { shapeId: box.id, side: "top" },
-        startArrowhead: "none",
-        endArrowhead: "none",
-        fill: "none",
-        stroke: "#000000",
-        strokeWidth: 1.25,
-        rotation: 0,
-      };
-      connectors.push(connector);
+      const parent = parentBoxes.at(-1);
+      if (parent) {
+        // Will be positioned properly after layout
+        const connector: ElbowConnectorShape = {
+          id: createId(),
+          type: "elbow-connector",
+          x: 0,
+          y: 0,
+          startPoint: { x: 0, y: 0 },
+          endPoint: { x: 0, y: 0 },
+          startDirection: "vertical",
+          startBinding: { shapeId: parent.id, side: "bottom" },
+          endBinding: { shapeId: box.id, side: "top" },
+          startArrowhead: "none",
+          endArrowhead: "none",
+          fill: "none",
+          stroke: "#000000",
+          strokeWidth: 1.25,
+          rotation: 0,
+        };
+        connectors.push(connector);
+      }
     }
 
     set((state) => {
@@ -254,7 +264,9 @@ export const useShapeStore = create<ShapeStore>((set, get) => ({
       const newSelected = new Set(state.selectedIds);
       newSelected.delete(id);
       const filteredShapes = state.shapes.filter((s) => {
-        if (s.id === id) return false;
+        if (s.id === id) {
+          return false;
+        }
         if (
           s.type === "elbow-connector" &&
           (s.startBinding?.shapeId === id || s.endBinding?.shapeId === id)
@@ -346,7 +358,9 @@ export const useShapeStore = create<ShapeStore>((set, get) => ({
 
   pasteClipboard: () => {
     const { clipboard, canvasSize } = get();
-    if (clipboard.length === 0) return;
+    if (clipboard.length === 0) {
+      return;
+    }
 
     get().saveHistory();
 
@@ -358,22 +372,7 @@ export const useShapeStore = create<ShapeStore>((set, get) => ({
       return { ...shape, id: newId };
     });
 
-    newShapes.forEach((shape) => {
-      if (shape.type === "elbow-connector") {
-        if (shape.startBinding && idMap.has(shape.startBinding.shapeId)) {
-          shape.startBinding = {
-            ...shape.startBinding,
-            shapeId: idMap.get(shape.startBinding.shapeId)!,
-          };
-        }
-        if (shape.endBinding && idMap.has(shape.endBinding.shapeId)) {
-          shape.endBinding = {
-            ...shape.endBinding,
-            shapeId: idMap.get(shape.endBinding.shapeId)!,
-          };
-        }
-      }
-    });
+    rebindConnectors(newShapes, idMap);
 
     set((state) => {
       const allShapes = [...state.shapes, ...newShapes];
@@ -397,7 +396,9 @@ export const useShapeStore = create<ShapeStore>((set, get) => ({
       (s) => selectedIds.has(s.id) && s.type !== "elbow-connector"
     );
 
-    if (selectedShapes.length !== 2) return false;
+    if (selectedShapes.length !== 2) {
+      return false;
+    }
 
     get().saveHistory();
 
@@ -450,8 +451,9 @@ export const useShapeStore = create<ShapeStore>((set, get) => ({
     if (
       !currentShape ||
       (currentShape.type !== "rectangle" && currentShape.type !== "ellipse")
-    )
+    ) {
       return;
+    }
 
     // Check if shape already has a parent (incoming connector)
     const hasParent = shapes.some(
@@ -510,8 +512,9 @@ export const useShapeStore = create<ShapeStore>((set, get) => ({
     if (
       !currentShape ||
       (currentShape.type !== "rectangle" && currentShape.type !== "ellipse")
-    )
+    ) {
       return;
+    }
 
     // Create child box at level + 1
     const level = (currentShape.level ?? 0) + 1;
@@ -583,7 +586,10 @@ export const useShapeStore = create<ShapeStore>((set, get) => ({
           // Update endBinding side
           return {
             ...s,
-            endBinding: { ...s.endBinding!, side: newSide },
+            endBinding: {
+              ...(s.endBinding ?? { shapeId: "", side: "top" }),
+              side: newSide,
+            },
           } as Shape;
         }
         return s;
@@ -625,7 +631,9 @@ function layoutShapesByLevel(
       s.type !== "elbow-connector"
   );
 
-  if (boxes.length === 0) return shapes;
+  if (boxes.length === 0) {
+    return shapes;
+  }
 
   // 1. Build Graph
   const { parentMap, childrenMap } = buildGraph(boxes, connectors);
@@ -686,7 +694,7 @@ function layoutShapesByLevel(
   const positionedBoxIds = new Set<string>();
   const positionedBoxes: (RectangleShape | EllipseShape)[] = [];
 
-  forestData.forEach(({ root, dim }) => {
+  for (const { root, dim } of forestData) {
     layoutTreeRecursive(
       root.id,
       currentForestX,
@@ -700,7 +708,7 @@ function layoutShapesByLevel(
       params
     );
     currentForestX += dim.width + params.shapeGap;
-  });
+  }
 
   // 6. Handle disconnected nodes / cycles that weren't visited
   // (e.g. if graph had cycles not reachable from roots? or separate islands)
@@ -711,7 +719,9 @@ function layoutShapesByLevel(
   if (unvisited.length > 0) {
     // Just place them below or keep original position?
     // Let's place them at the bottom.
-    unvisited.forEach((box) => positionedBoxes.push(box));
+    for (const box of unvisited) {
+      positionedBoxes.push(box);
+    }
   }
 
   return [...positionedBoxes, ...connectors, ...others];
@@ -728,15 +738,19 @@ function buildGraph(
   // Map ID to Box for easy lookup
   const boxMap = new Map(boxes.map((b) => [b.id, b]));
 
-  connectors.forEach((conn) => {
+  for (const conn of connectors) {
     // Org Chart flow: Top (Parent) -> Bottom (Child)
     // We look at bindings.
-    if (!(conn.startBinding && conn.endBinding)) return;
+    if (!(conn.startBinding && conn.endBinding)) {
+      continue;
+    }
 
     // Validate we are connecting two boxes
     const startBox = boxMap.get(conn.startBinding.shapeId);
     const endBox = boxMap.get(conn.endBinding.shapeId);
-    if (!(startBox && endBox)) return;
+    if (!(startBox && endBox)) {
+      continue;
+    }
 
     // Convention: Start -> End.
     // Usually Start is top (Parent), End is bottom (Child).
@@ -749,9 +763,11 @@ function buildGraph(
 
     parentMap.set(childId, parentId);
 
-    if (!childrenMap.has(parentId)) childrenMap.set(parentId, []);
-    childrenMap.get(parentId)!.push(childId);
-  });
+    if (!childrenMap.has(parentId)) {
+      childrenMap.set(parentId, []);
+    }
+    childrenMap.get(parentId)?.push(childId);
+  }
 
   return { parentMap, childrenMap };
 }
@@ -767,7 +783,9 @@ function calculateSubtreeDimensions(
   params: LayoutParams
 ): { width: number; height: number } {
   const node = boxes.find((b) => b.id === nodeId);
-  if (!node) return { width: 0, height: 0 };
+  if (!node) {
+    return { width: 0, height: 0 };
+  }
 
   const childrenIds = childrenMap.get(nodeId) || [];
 
@@ -858,16 +876,23 @@ function layoutTreeRecursive(
   availableWidth: number,
   childrenMap: Map<string, string[]>,
   boxes: (RectangleShape | EllipseShape)[],
-  layoutData: Map<string, any>,
+  layoutData: Map<
+    string,
+    { width: number; height: number; x: number; y: number }
+  >,
   result: (RectangleShape | EllipseShape)[],
   visited: Set<string>,
   params: LayoutParams
 ) {
-  if (visited.has(nodeId)) return;
+  if (visited.has(nodeId)) {
+    return;
+  }
   visited.add(nodeId);
 
   const node = boxes.find((b) => b.id === nodeId);
-  if (!node) return;
+  if (!node) {
+    return;
+  }
 
   // Center this node within the available width
   const nodeX = x + (availableWidth - node.width) / 2;
@@ -882,42 +907,28 @@ function layoutTreeRecursive(
 
   // Layout Children
   const childrenIds = childrenMap.get(nodeId) || [];
-  if (childrenIds.length === 0) return;
+  if (childrenIds.length === 0) {
+    return;
+  }
 
   const childrenDims = childrenIds.map((id) => layoutData.get(id));
 
   if (node.childLayout === "vertical") {
     // Vertical Stack
-    // Parent is centered in available width (x + availableWidth/2 - node.width/2) -> nodeX
-    // But for vertical stack, we want children to be indented relative to parent Center or parent Left?
-    // Usually org chart vertical list:
-    //     [ Parent ]
-    //         |
-    //         +-- [ Child 1 ]
-    //         |
-    //         +-- [ Child 2 ]
-
-    // So children start at nodeX + node.width/2 + INDENT?
-    // Wait, nodeX is the left edge of the parent.
-    // Parent center is nodeX + node.width/2.
-    // We want the connector to go down from center, then right.
-
     const parentCenterX = nodeX + node.width / 2;
     const maxChildWidth =
       childrenDims.length > 0
-        ? Math.max(...childrenDims.map((d) => d.width))
+        ? Math.max(...childrenDims.map((d) => d?.width ?? 0))
         : 0;
 
-    // Center the block of children under the parent
-    // Note: We use a fixed left alignment for the stack itself, but center the whole stack relative to parent
     const childStartX = parentCenterX - maxChildWidth / 2;
-
-    // Start lower to allow for the "Jog"
     let currentChildY = y + node.height + params.levelHeight;
 
-    childrenDims.forEach((dim, index) => {
+    for (const [index, dim] of childrenDims.entries()) {
+      if (!dim) {
+        continue;
+      }
       const childId = childrenIds[index];
-      // Pass dim.width as available width so the child just takes what it needs
       layoutTreeRecursive(
         childId,
         childStartX,
@@ -930,23 +941,25 @@ function layoutTreeRecursive(
         visited,
         params
       );
-
       currentChildY += dim.height + params.shapeGap;
-    });
+    }
   } else {
     // Horizontal Tree
     let currentChildX = x;
 
     const totalChildrenWidth =
-      childrenDims.reduce((sum, d) => sum + d.width, 0) +
+      childrenDims.reduce((sum, d) => sum + (d?.width ?? 0), 0) +
       Math.max(0, childrenDims.length - 1) * params.shapeGap;
 
     if (totalChildrenWidth < availableWidth) {
       currentChildX += (availableWidth - totalChildrenWidth) / 2;
     }
 
-    childrenIds.forEach((childId, index) => {
+    for (const [index, childId] of childrenIds.entries()) {
       const dim = childrenDims[index];
+      if (!dim) {
+        continue;
+      }
       layoutTreeRecursive(
         childId,
         currentChildX,
@@ -960,63 +973,90 @@ function layoutTreeRecursive(
         params
       );
       currentChildX += dim.width + params.shapeGap;
-    });
+    }
   }
 }
 
 // Update all connector positions based on their bindings
 function updateAllConnectors(shapes: Shape[]): Shape[] {
   const shapeMap = new Map(shapes.map((s) => [s.id, s]));
+  return shapes.map((shape) => updateSingleConnector(shape, shapeMap));
+}
 
-  return shapes.map((shape) => {
-    if (shape.type !== "elbow-connector") return shape;
+function updateSingleConnector(
+  shape: Shape,
+  shapeMap: Map<string, Shape>
+): Shape {
+  if (shape.type !== "elbow-connector") {
+    return shape;
+  }
 
-    let startPoint = shape.startPoint;
-    let endPoint = shape.endPoint;
-    let startDirection = shape.startDirection;
+  let startPoint = shape.startPoint;
+  let endPoint = shape.endPoint;
+  let startDirection = shape.startDirection;
 
-    if (shape.startBinding) {
-      const boundShape = shapeMap.get(shape.startBinding.shapeId);
-      if (boundShape) {
-        startPoint = getShapeConnectionPoint(
-          boundShape,
-          shape.startBinding.side
-        );
-        // Auto-set direction based on binding side
-        if (
-          shape.startBinding.side === "top" ||
-          shape.startBinding.side === "bottom"
-        ) {
-          startDirection = "vertical";
-        } else {
-          startDirection = "horizontal";
+  if (shape.startBinding) {
+    const boundShape = shapeMap.get(shape.startBinding.shapeId);
+    if (boundShape) {
+      startPoint = getShapeConnectionPoint(boundShape, shape.startBinding.side);
+      // Auto-set direction based on binding side
+      if (
+        shape.startBinding.side === "top" ||
+        shape.startBinding.side === "bottom"
+      ) {
+        startDirection = "vertical";
+      } else {
+        startDirection = "horizontal";
+      }
+    }
+  }
+
+  if (shape.endBinding) {
+    const boundShape = shapeMap.get(shape.endBinding.shapeId);
+    if (boundShape) {
+      endPoint = getShapeConnectionPoint(boundShape, shape.endBinding.side);
+    }
+  }
+
+  // Fallback if no start binding but we want smart defaults?
+  if (!shape.startBinding) {
+    const dx = Math.abs(endPoint.x - startPoint.x);
+    const dy = Math.abs(endPoint.y - startPoint.y);
+    // Prefer vertical if moving mostly up/down
+    startDirection = dy > dx ? "vertical" : "horizontal";
+  }
+
+  return {
+    ...shape,
+    startPoint,
+    endPoint,
+    startDirection,
+    x: Math.min(startPoint.x, endPoint.x),
+    y: Math.min(startPoint.y, endPoint.y),
+  };
+}
+
+function rebindConnectors(shapes: Shape[], idMap: Map<string, string>) {
+  for (const shape of shapes) {
+    if (shape.type === "elbow-connector") {
+      if (shape.startBinding && idMap.has(shape.startBinding.shapeId)) {
+        const newId = idMap.get(shape.startBinding.shapeId);
+        if (newId) {
+          shape.startBinding = {
+            ...shape.startBinding,
+            shapeId: newId,
+          };
+        }
+      }
+      if (shape.endBinding && idMap.has(shape.endBinding.shapeId)) {
+        const newId = idMap.get(shape.endBinding.shapeId);
+        if (newId) {
+          shape.endBinding = {
+            ...shape.endBinding,
+            shapeId: newId,
+          };
         }
       }
     }
-
-    if (shape.endBinding) {
-      const boundShape = shapeMap.get(shape.endBinding.shapeId);
-      if (boundShape) {
-        endPoint = getShapeConnectionPoint(boundShape, shape.endBinding.side);
-      }
-    }
-
-    // Fallback if no start binding but we want smart defaults?
-    // If just points:
-    if (!shape.startBinding) {
-      const dx = Math.abs(endPoint.x - startPoint.x);
-      const dy = Math.abs(endPoint.y - startPoint.y);
-      // Prefer vertical if moving mostly up/down
-      startDirection = dy > dx ? "vertical" : "horizontal";
-    }
-
-    return {
-      ...shape,
-      startPoint,
-      endPoint,
-      startDirection,
-      x: Math.min(startPoint.x, endPoint.x),
-      y: Math.min(startPoint.y, endPoint.y),
-    };
-  });
+  }
 }

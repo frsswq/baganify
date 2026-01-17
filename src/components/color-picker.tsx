@@ -219,12 +219,14 @@ export function ColorPicker({
             </div>
             <div className="grid grid-cols-10 gap-[1px]">
               {THEME_COLORS.map((row, rowIndex) => (
+                // biome-ignore lint/suspicious/noArrayIndexKey: Static color list
                 <React.Fragment key={rowIndex}>
                   {row.map((c, colIndex) => (
                     <ColorSwatch
                       className={rowIndex === 0 ? "mb-1" : ""}
                       color={c}
                       isSelected={c.toLowerCase() === color.toLowerCase()}
+                      // biome-ignore lint/suspicious/noArrayIndexKey: Static color list
                       key={`${rowIndex}-${colIndex}`}
                       onClick={() => handleColorClick(c)} // Spacing after first row
                     />

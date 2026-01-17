@@ -31,11 +31,11 @@ export async function copyShapesToClipboard(
       s.startPoint = { x: s.startPoint.x - bbox.x, y: s.startPoint.y - bbox.y };
       s.endPoint = { x: s.endPoint.x - bbox.x, y: s.endPoint.y - bbox.y };
       // Also update x/y just in case they are used
-      s.x = s.x - bbox.x;
-      s.y = s.y - bbox.y;
+      s.x -= bbox.x;
+      s.y -= bbox.y;
     } else {
-      s.x = s.x - bbox.x;
-      s.y = s.y - bbox.y;
+      s.x -= bbox.x;
+      s.y -= bbox.y;
     }
     return s;
   });
@@ -75,7 +75,7 @@ export async function copyShapesToClipboard(
 /**
  * Convert SVG string to PNG blob
  */
-async function svgToPng(
+function svgToPng(
   svgContent: string,
   width: number,
   height: number
@@ -134,11 +134,11 @@ export function downloadAsSVG(shapes: Shape[], filename = "shapes.svg"): void {
     if (s.type === "elbow-connector") {
       s.startPoint = { x: s.startPoint.x - bbox.x, y: s.startPoint.y - bbox.y };
       s.endPoint = { x: s.endPoint.x - bbox.x, y: s.endPoint.y - bbox.y };
-      s.x = s.x - bbox.x;
-      s.y = s.y - bbox.y;
+      s.x -= bbox.x;
+      s.y -= bbox.y;
     } else {
-      s.x = s.x - bbox.x;
-      s.y = s.y - bbox.y;
+      s.x -= bbox.x;
+      s.y -= bbox.y;
     }
     return s;
   });

@@ -260,39 +260,23 @@ function renderArrowhead(
   position: "start" | "end"
 ): string {
   const type = position === "start" ? shape.startArrowhead : shape.endArrowhead;
-  if (type === "none") return "";
+  if (type === "none") {
+    return "";
+  }
 
   const { startPoint, endPoint, startDirection } = shape;
-  let x: number, y: number, rotation: number;
+  let x: number;
+  let y: number;
+  let rotation: number;
 
   if (position === "start") {
     x = startPoint.x;
     y = startPoint.y;
-    // Determine start direction (opposite of path)
-    if (startDirection === "horizontal") {
-      // Path goes (startX, startY) -> (midX, startY)
-      // Arrow points opposite to (midX - startX)
-      const midX = (startPoint.x + endPoint.x) / 2;
-      rotation = midX > startPoint.x ? 180 : 0;
-    } else {
-      // Path goes (startX, startY) -> (startX, midY)
-      // Arrow points opposite to (midY - startY)
-      const midY = (startPoint.y + endPoint.y) / 2;
-      rotation = midY > startPoint.y ? 270 : 90;
-    }
+    rotation = getArrowRotation(startPoint, endPoint, startDirection, "start");
   } else {
     x = endPoint.x;
     y = endPoint.y;
-    // Determine end direction (same as path arrival)
-    if (startDirection === "horizontal") {
-      // Path comes from (midX, endY) -> (endX, endY)
-      const midX = (startPoint.x + endPoint.x) / 2;
-      rotation = endPoint.x > midX ? 0 : 180;
-    } else {
-      // Path comes from (endX, midY) -> (endX, endY)
-      const midY = (startPoint.y + endPoint.y) / 2;
-      rotation = endPoint.y > midY ? 90 : 270;
-    }
+    rotation = getArrowRotation(startPoint, endPoint, startDirection, "end");
   }
 
   const transform = `transform="translate(${x}, ${y}) rotate(${rotation})"`;
@@ -307,4 +291,26 @@ function renderArrowhead(
   }
 
   return "";
+}
+
+function getArrowRotation(
+  startPoint: { x: number; y: number },
+  endPoint: { x: number; y: number },
+  startDirection: "horizontal" | "vertical",
+  position: "start" | "end"
+): number {
+  if (position === "start") {
+    if (startDirection === "horizontal") {
+      const midX = (startPoint.x + endPoint.x) / 2;
+      return midX > startPoint.x ? 180 : 0;
+    }
+    const midY = (startPoint.y + endPoint.y) / 2;
+    return midY > startPoint.y ? 270 : 90;
+  }
+  if (startDirection === "horizontal") {
+    const midX = (startPoint.x + endPoint.x) / 2;
+    return endPoint.x > midX ? 0 : 180;
+  }
+  const midY = (startPoint.y + endPoint.y) / 2;
+  return endPoint.y > midY ? 90 : 270;
 }

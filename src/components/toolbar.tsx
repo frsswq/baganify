@@ -10,7 +10,7 @@ import {
 import type { ElbowConnectorShape } from "../lib/shapes/types";
 import { useShapeStore } from "../lib/store/shapes";
 import { cn } from "../lib/utils";
-import { LayoutSettings } from "./LayoutSettings";
+import { LayoutSettings } from "./layout-settings";
 import { Button } from "./ui/button";
 import { Separator } from "./ui/separator";
 
@@ -63,13 +63,15 @@ export function Toolbar() {
               disabled={hasParent || hasVerticalParent}
               onClick={() => addParent(selectedShape?.id)}
               size="sm"
-              title={
-                hasParent
-                  ? "Shape already has a parent"
-                  : hasVerticalParent
-                    ? "Cannot add parent to stacked item"
-                    : "Add Parent (Level Up)"
-              }
+              title={(() => {
+                if (hasParent) {
+                  return "Shape already has a parent";
+                }
+                if (hasVerticalParent) {
+                  return "Cannot add parent to stacked item";
+                }
+                return "Add Parent (Level Up)";
+              })()}
               variant="ghost"
             >
               <ArrowUpIcon className="mr-1.5" size={16} weight="bold" />
