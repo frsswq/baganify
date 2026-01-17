@@ -95,7 +95,7 @@ export function Toolbar() {
         )}
       </div>
       
-      <div className="text-center mt-1.5 text-xs text-gray-400">
+      <div className="text-center mt-1.5 text-xs text-gray-400 select-none">
         {!isBoxSelected ? "Start by adding a box" : "Select a box to add relatives"} • Double-click to edit
       </div>
     </div>
