@@ -476,7 +476,7 @@ export const useShapeStore = create<ShapeStore>((set, get) => ({
   
   toggleChildLayout: (shapeId: string) => {
     get().saveHistory();
-    const { shapes, canvasSize } = get();
+    const { canvasSize } = get();
     
     set((state) => {
       const newLayout = (state.shapes.find(s => s.id === shapeId)?.childLayout || 'horizontal') === 'horizontal' ? 'vertical' : 'horizontal';
@@ -652,9 +652,18 @@ function calculateSubtreeDimensions(
       const totalChildrenHeight = childrenDims.reduce((sum, d) => sum + d.height, 0) + (Math.max(0, childrenDims.length - 1) * params.shapeGap);
       
       // If we have children, we need space for the indent
-      const subtreeWidth = childrenDims.length > 0 
-          ? Math.max(node.width, params.verticalIndent + maxChildWidth)
-          : node.width;
+      // If we have children, we need space for the asymmetric vertical stack.
+      // Since layoutTreeRecursive centers the parent in the available width,
+      // we need to ensure the available width is symmetric around the spine 
+      // to accommodate the largest extent.
+      // Left extent needed: node.width / 2
+      // Right extent needed: params.verticalIndent + maxChildWidth
+      
+      const halfParent = node.width / 2;
+      const rightExtent = childrenDims.length > 0 ? (params.verticalIndent + maxChildWidth) : halfParent;
+      const maxExtent = Math.max(halfParent, rightExtent);
+      
+      const subtreeWidth = maxExtent * 2;
 
       const subtreeHeight = node.height + (childrenDims.length > 0 ? params.levelHeight/2 + totalChildrenHeight : 0);
       
@@ -721,16 +730,18 @@ function layoutTreeRecursive(
       // We want the connector to go down from center, then right.
       
       const parentCenterX = nodeX + node.width / 2;
-      const childStartX = parentCenterX + params.verticalIndent; 
+      const maxChildWidth = childrenDims.length > 0 ? Math.max(...childrenDims.map(d => d.width)) : 0;
       
-      // Start slightly lower
-      let currentChildY = y + node.height + params.levelHeight/2; 
+      // Center the block of children under the parent
+      // Note: We use a fixed left alignment for the stack itself, but center the whole stack relative to parent
+      const childStartX = parentCenterX - maxChildWidth / 2;
       
-      childrenIds.forEach((childId, index) => {
-        const dim = childrenDims[index];
-        
+      // Start lower to allow for the "Jog"
+      let currentChildY = y + node.height + params.levelHeight; 
+      
+      childrenDims.forEach((dim, index) => {
+        const childId = childrenIds[index];
         // Pass dim.width as available width so the child just takes what it needs
-        // and doesn't try to center itself in a huge area.
         layoutTreeRecursive(childId, childStartX, currentChildY, dim.width, childrenMap, boxes, layoutData, result, visited, params);
         
         currentChildY += dim.height + params.shapeGap;

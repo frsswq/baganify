@@ -5,7 +5,7 @@ import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { Separator } from './ui/separator';
 import { cn } from '@/lib/utils';
-import { TextT, Square, Circle, SquaresFour, ArrowRight, Minus, CornersOut, ArrowsInLineHorizontal, ArrowsInLineVertical, PaintBucket, PencilSimple } from '@phosphor-icons/react';
+import { TextTIcon, SquareIcon, CircleIcon, SquaresFourIcon, ArrowRightIcon, MinusIcon, CornersOutIcon, ArrowsInLineHorizontalIcon, ArrowsInLineVerticalIcon, PaintBucketIcon, PencilSimpleIcon } from '@phosphor-icons/react';
 
 export function PropertyPanel() {
   const { shapes, selectedIds, updateShape, updateShapes, removeShape } = useShapeStore();
@@ -57,7 +57,7 @@ export function PropertyPanel() {
                 onClick={() => handleBatchUpdate({ type: 'rectangle', cornerRadius: 0 })}
                 title="Rectangle"
               >
-                <Square size={14} />
+                <SquareIcon size={14} />
               </Button>
               <Button
                 variant={selectedShapes.every(s => s.type === 'ellipse') ? 'default' : 'ghost'}
@@ -66,7 +66,7 @@ export function PropertyPanel() {
                 onClick={() => handleBatchUpdate({ type: 'ellipse' })}
                 title="Ellipse"
               >
-                <Circle size={14} />
+                <CircleIcon size={14} />
               </Button>
           </div>
         )}
@@ -80,7 +80,7 @@ export function PropertyPanel() {
              {showFill && (
                 <div className="flex items-center gap-2">
                    <div className="w-6 flex justify-center text-gray-500">
-                      <PaintBucket size={16} />
+                      <PaintBucketIcon size={16} />
                    </div>
                    <div>
                      <ColorPicker 
@@ -96,7 +96,7 @@ export function PropertyPanel() {
              {showStroke && (
                <div className="flex items-center gap-2">
                  <div className="w-6 flex justify-center text-gray-500">
-                    <PencilSimple size={16} />
+                    <PencilSimpleIcon size={16} />
                  </div>
                  <div className="min-w-0">
                     <ColorPicker 
@@ -121,7 +121,7 @@ export function PropertyPanel() {
              {showTextStyles && (
                 <div className="flex items-center gap-2">
                   <div className="w-6 flex justify-center text-gray-500">
-                     <TextT size={16} />
+                     <TextTIcon size={16} />
                   </div>
                   <div className="min-w-0">
                      <ColorPicker 
@@ -176,9 +176,9 @@ export function PropertyPanel() {
                {firstShape.type === 'rectangle' && (
                  <div className="flex items-center gap-2 col-span-2">
                     <div className="w-6 flex justify-center text-gray-400">
-                        <CornersOut size={14} />
+                        <CornersOutIcon size={14} />
                     </div>
-                    <Input 
+                    <Input  
                         type="number"
                         className="h-7 px-2 text-xs bg-gray-50 border border-gray-200 focus:bg-white transition-colors flex-1"
                         value={firstShape.cornerRadius || 0}
@@ -219,7 +219,7 @@ export function PropertyPanel() {
         {allRectOrEllipse && (
            <div className="flex items-center justify-between px-1">
                <div className="flex items-center gap-2 text-gray-600">
-                 <SquaresFour size={14} />
+                 <SquaresFourIcon size={14} />
                  <span>Stacked</span>
                </div>
                <Button
@@ -231,7 +231,7 @@ export function PropertyPanel() {
                         handleBatchUpdate({ stacked: !allStacked });
                   }}
                >
-                   {selectedShapes.every(s => s.stacked) ? <ArrowsInLineVertical size={14} /> : <ArrowsInLineHorizontal size={14} />}
+                   {selectedShapes.every(s => s.stacked) ? <ArrowsInLineVerticalIcon size={14} /> : <ArrowsInLineHorizontalIcon size={14} />}
                </Button>
            </div>
         )}
@@ -255,8 +255,8 @@ export function PropertyPanel() {
 function ArrowheadSelector({ value, onChange }: { value: ArrowheadType; onChange: (v: ArrowheadType) => void }) {
   const options: { value: ArrowheadType; label: React.ReactNode; tooltip: string }[] = [
     { value: 'none', label: <div className="w-4 h-4 border border-dashed border-gray-400 rounded-sm" />, tooltip: 'None' },
-    { value: 'arrow', label: <ArrowRight size={14} />, tooltip: 'Arrow' },
-    { value: 'bar', label: <Minus size={14} className="rotate-90" />, tooltip: 'Bar' },
+    { value: 'arrow', label: <ArrowRightIcon size={14} />, tooltip: 'Arrow' },
+    { value: 'bar', label: <MinusIcon size={14} className="rotate-90" />, tooltip: 'Bar' },
   ];
 
   return (

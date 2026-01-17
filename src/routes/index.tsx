@@ -8,7 +8,7 @@ import { useShapeStore } from '../lib/store/shapes'
 export const Route = createFileRoute('/')({ component: ShapeBuilder })
 
 function ShapeBuilder() {
-  const { selectedIds, shapes } = useShapeStore()
+  const { shapes } = useShapeStore()
 
   return (
     <div className="flex w-full h-dvh overflow-hidden bg-[#f8f9fa]">

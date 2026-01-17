@@ -1,13 +1,14 @@
 import { useShapeStore } from '../lib/store/shapes';
+import { ElbowConnectorShape } from '../lib/shapes/types';
 import { cn } from '../lib/utils';
 import { 
-  Plus,
-  ArrowCounterClockwise, 
-  ArrowClockwise, 
-  Trash,
-  ArrowUp,
-  ArrowDown,
-  List
+  PlusIcon,
+  ArrowCounterClockwiseIcon, 
+  ArrowClockwiseIcon, 
+  TrashIcon,
+  ArrowUpIcon,
+  ArrowDownIcon,
+  ListIcon
 } from '@phosphor-icons/react';
 import { Button } from './ui/button';
 import { Separator } from './ui/separator';
@@ -45,7 +46,7 @@ export function Toolbar() {
             title="Add Root Box"
             className="text-xs h-8 px-2 text-gray-700"
           >
-            <Plus size={16} weight="bold" className="mr-1.5" />
+            <PlusIcon size={16} weight="bold" className="mr-1.5" />
             Add Box
           </Button>
         ) : (
@@ -58,7 +59,7 @@ export function Toolbar() {
               title={hasParent ? "Shape already has a parent" : hasVerticalParent ? "Cannot add parent to stacked item" : "Add Parent (Level Up)"}
               className={cn("text-xs h-8 px-2 text-gray-700", (hasParent || hasVerticalParent) && "opacity-50 cursor-not-allowed")}
             >
-              <ArrowUp size={16} weight="bold" className="mr-1.5" />
+              <ArrowUpIcon size={16} weight="bold" className="mr-1.5" />
               Add Parent
             </Button>
 
@@ -70,7 +71,7 @@ export function Toolbar() {
               title={hasVerticalParent ? "Cannot add child to stacked item" : "Add Child (Level Down)"}
               className={cn("text-xs h-8 px-2 text-gray-700", hasVerticalParent && "opacity-50 cursor-not-allowed")}
             >
-              <ArrowDown size={16} weight="bold" className="mr-1.5" />
+              <ArrowDownIcon size={16} weight="bold" className="mr-1.5" />
               Add Child
             </Button>
             
@@ -83,7 +84,7 @@ export function Toolbar() {
               title="Toggle Vertical Stack Mode"
               className={cn("h-8 w-8", selectedShape.childLayout === 'vertical' && "bg-gray-100 text-blue-600")}
             >
-              <List size={16} weight="bold" />
+              <ListIcon size={16} weight="bold" />
             </Button>
 
 
@@ -100,7 +101,7 @@ export function Toolbar() {
           title="Undo (Ctrl+Z)"
           className="text-gray-500"
         >
-          <ArrowCounterClockwise size={16} weight="regular" />
+          <ArrowCounterClockwiseIcon size={16} weight="regular" />
         </Button>
         <Button 
           variant="ghost" 
@@ -109,7 +110,7 @@ export function Toolbar() {
           title="Redo (Ctrl+Shift+Z)"
           className="text-gray-500"
         >
-          <ArrowClockwise size={16} weight="regular" />
+          <ArrowClockwiseIcon size={16} weight="regular" />
         </Button>
         
         <Separator orientation="vertical" className="h-6 mx-1" />
@@ -125,7 +126,7 @@ export function Toolbar() {
               title="Clear all"
               className="text-gray-400 hover:text-red-600 hover:bg-red-50"
             >
-              <Trash size={16} weight="regular" />
+              <TrashIcon size={16} weight="regular" />
             </Button>
           </>
         )}

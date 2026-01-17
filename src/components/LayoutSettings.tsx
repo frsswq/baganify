@@ -1,4 +1,4 @@
-import { Gear } from "@phosphor-icons/react";
+import { GearIcon } from "@phosphor-icons/react";
 import { useShapeStore } from "../lib/store/shapes";
 import { buttonVariants } from "./ui/button";
 import { Input } from "./ui/input";
@@ -23,7 +23,7 @@ export function LayoutSettings() {
   return (
     <Popover>
       <PopoverTrigger className={cn(buttonVariants({ variant: "ghost", size: "icon" }), "h-8 w-8 text-gray-500")} title="Layout Settings">
-        <Gear size={20} />
+        <GearIcon size={20} />
       </PopoverTrigger>
       <PopoverContent align="end" className="w-80">
         <div className="grid gap-4">

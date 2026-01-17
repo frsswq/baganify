@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { CaretDown, Palette } from '@phosphor-icons/react';
+import { CaretDownIcon, PaletteIcon } from '@phosphor-icons/react';
 import { Button } from './ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
 import { Separator } from './ui/separator';
@@ -88,7 +88,7 @@ export function ColorPicker({ color, onChange, label, className, type = 'fill' }
              
              {label && <span className="truncate text-xs text-gray-700">{label}</span>}
            </div>
-           <CaretDown className="h-3 w-3 text-gray-500" />
+           <CaretDownIcon className="h-3 w-3 text-gray-500" />
         </Button>
       } />
       
@@ -158,7 +158,7 @@ export function ColorPicker({ color, onChange, label, className, type = 'fill' }
              className="flex items-center gap-3 px-3 py-1.5 hover:bg-[#fde7ad] hover:outline hover:outline-1 hover:outline-[#e5c365] text-left border border-transparent transition-none"
              onClick={handleNativeClick}
            >
-             <Palette className="w-4 h-4 text-gray-700" />
+             <PaletteIcon className="w-4 h-4 text-gray-700" />
              <span className="text-xs text-gray-800">More Colors...</span>
            </button>
            

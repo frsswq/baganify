@@ -22,6 +22,7 @@ export function Canvas() {
   const [toast, setToast] = useState({ visible: false, message: '' });
   const [isPanning, setIsPanning] = useState(false);
   const lastMousePos = useRef({ x: 0, y: 0 });
+  const isSpacePressed = useRef(false);
 
   // Report size to store for centering
   useEffect(() => {
@@ -99,12 +100,14 @@ export function Canvas() {
       }
       // Spacebar for panning
       if (e.code === 'Space' && !editingId) {
+        isSpacePressed.current = true;
         document.body.style.cursor = 'grab';
       }
     };
 
     const handleKeyUp = (e: KeyboardEvent) => {
        if (e.code === 'Space') {
+         isSpacePressed.current = false;
          document.body.style.cursor = 'default';
          setIsPanning(false);
        }
@@ -153,7 +156,7 @@ export function Canvas() {
   };
 
   const handleMouseDown = (e: React.MouseEvent) => {
-    if (e.button === 1 || (e.button === 0 && e.getModifierState('Space'))) {
+    if (e.button === 1 || (e.button === 0 && isSpacePressed.current)) {
        e.preventDefault();
        setIsPanning(true);
        lastMousePos.current = { x: e.clientX, y: e.clientY };
@@ -598,45 +601,28 @@ function Arrowhead({ shape, position }: { shape: ElbowConnectorShape; position: 
 function getElbowPath(shape: ElbowConnectorShape): string {
   const { startPoint, endPoint, startDirection } = shape;
   if (startDirection === 'vertical') {
-    // If vertical but target is effectively to the side (like vertical stack child),
-    // we want Start -> Down -> Turn -> Horizontal -> End.
-    // Standard vertical is Start -> Down -> MidY -> Turn -> Horizontal -> ... -> End
-    // Wait, simple elbow is 3 segments usually. Z-shape.
-    // L-shape is 2 segments.
-    // If x is different and y is different.
+    // Check if we are connecting to the side of a child (Vertical Stack layout)
+    if (shape.endBinding?.side === 'left' || shape.endBinding?.side === 'right') {
+       // "Jogged Spine" style for vertical lists (Image 2 style)
+       // Parent Center -> Down -> Left/Right to Spine -> Down -> Right/Left to Child
+       const spineOffset = 20; // Distance from child left edge to spine
+       const verticalDrop = 20; // How far down from parent before jogging
+       
+       const spineX = shape.endBinding.side === 'left' 
+          ? endPoint.x - spineOffset 
+          : endPoint.x + spineOffset;
+          
+       const jogY = startPoint.y + verticalDrop;
+       
+       return `M ${startPoint.x} ${startPoint.y} L ${startPoint.x} ${jogY} L ${spineX} ${jogY} L ${spineX} ${endPoint.y} L ${endPoint.x} ${endPoint.y}`;
+    }
     
-    // For vertical stack:
-    // Start (Parent Bottom)
-    //  |
-    //  +---- End (Child Left)
-    
-    // So we go down to End.y, then across to End.x?
-    // No, child is centered vertically on End.y usually? 
-    // Actually child BINDING is on 'left' side.
-    // So End Point is (ChildLeftX, ChildCenterY).
-    // Start Point is (ParentCenterX, ParentBottomY).
-    // We want to go Down to ChildCenterY? No, that would hit the child.
-    // We want to go Down to... Halfway?
-    // Actually for "List Graph" style:
-    //   |
-    //   |
-    //   +--- [ Child ]
-    
-    // The "Pole" goes all the way down.
-    // The branch goes horizontal.
-    // So for a specific connector:
-    // Start (Parent) -> Down to End.y -> Right to End.x?
-    // Yes, that forms an L shape (technically inverted L).
-    // Start=(Px, Py) -> (Px, Ey) -> (Ex, Ey)
-    
-    // However, the "Pole" needs to continue for subsequent children.
-    // But here we draw individual connectors per child.
-    // So each connector is:
-    // P -> (Px, Ey) -> E
-    // This perfectly overlaps for multiple children, creating the visual "Pole".
-    
-    return `M ${startPoint.x} ${startPoint.y} L ${startPoint.x} ${endPoint.y} L ${endPoint.x} ${endPoint.y}`;
+    // Standard Vertical -> Top/Bottom connection (Org Chart Tree layout)
+    // Needs a mid-point for the horizontal segment
+    const midY = (startPoint.y + endPoint.y) / 2;
+    return `M ${startPoint.x} ${startPoint.y} L ${startPoint.x} ${midY} L ${endPoint.x} ${midY} L ${endPoint.x} ${endPoint.y}`;
   } else {
+    // Horizontal start
     const midX = (startPoint.x + endPoint.x) / 2;
     return `M ${startPoint.x} ${startPoint.y} L ${midX} ${startPoint.y} L ${midX} ${endPoint.y} L ${endPoint.x} ${endPoint.y}`;
   }
