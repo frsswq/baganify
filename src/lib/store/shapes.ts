@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import type { Shape, RectangleShape, ElbowConnectorShape } from '../shapes/types';
+import type { Shape, RectangleShape, EllipseShape, ElbowConnectorShape } from '../shapes/types';
 import { createRectangle, createId, getShapeConnectionPoint } from '../shapes/types';
 
 interface HistoryState {
@@ -29,6 +29,7 @@ interface ShapeStore {
   addBoxAtLevel: (level: number) => void;
   removeShape: (id: string) => void;
   updateShape: <T extends Shape>(id: string, updates: Partial<T>) => void;
+  updateShapes: (ids: string[], updates: Partial<Shape>) => void;
   selectShape: (id: string, addToSelection?: boolean) => void;
   selectShapes: (ids: string[]) => void;
   clearSelection: () => void;
@@ -135,9 +136,11 @@ export const useShapeStore = create<ShapeStore>((set, get) => ({
     // Create a box at placeholder position
     const box = createRectangle(0, 0, '', level);
     
-    // Find boxes at the level above to auto-connect
+    // Find boxes/ellipses at the level above to auto-connect
     const parentLevel = level - 1;
-    const parentBoxes = shapes.filter((s): s is RectangleShape => s.type === 'rectangle' && s.level === parentLevel);
+    const parentBoxes = shapes.filter((s): s is RectangleShape | EllipseShape => 
+      (s.type === 'rectangle' || s.type === 'ellipse') && s.level === parentLevel
+    );
     
     // Create auto-connector to last parent if exists
     const connectors: ElbowConnectorShape[] = [];
@@ -208,6 +211,14 @@ export const useShapeStore = create<ShapeStore>((set, get) => ({
   updateShape: (id, updates) => {
     set((state) => ({
       shapes: state.shapes.map((s) => s.id === id ? { ...s, ...updates } as Shape : s),
+    }));
+  },
+  
+  updateShapes: (ids, updates) => {
+    get().saveHistory();
+    const idSet = new Set(ids);
+    set((state) => ({
+      shapes: state.shapes.map((s) => idSet.has(s.id) ? { ...s, ...updates } as Shape : s),
     }));
   },
   
@@ -342,8 +353,8 @@ export const useShapeStore = create<ShapeStore>((set, get) => ({
   addParent: (shapeId: string) => {
     get().saveHistory();
     const { shapes, canvasSize } = get();
-    const currentShape = shapes.find(s => s.id === shapeId) as RectangleShape;
-    if (!currentShape || currentShape.type !== 'rectangle') return;
+    const currentShape = shapes.find(s => s.id === shapeId) as RectangleShape | EllipseShape;
+    if (!currentShape || (currentShape.type !== 'rectangle' && currentShape.type !== 'ellipse')) return;
     
     // Create parent box at level - 1
     const level = (currentShape.level ?? 0) - 1;
@@ -381,8 +392,8 @@ export const useShapeStore = create<ShapeStore>((set, get) => ({
   addChild: (shapeId: string) => {
     get().saveHistory();
     const { shapes, canvasSize } = get();
-    const currentShape = shapes.find(s => s.id === shapeId) as RectangleShape;
-    if (!currentShape || currentShape.type !== 'rectangle') return;
+    const currentShape = shapes.find(s => s.id === shapeId) as RectangleShape | EllipseShape;
+    if (!currentShape || (currentShape.type !== 'rectangle' && currentShape.type !== 'ellipse')) return;
     
     // Create child box at level + 1
     const level = (currentShape.level ?? 0) + 1;
@@ -423,15 +434,15 @@ export const useShapeStore = create<ShapeStore>((set, get) => ({
   },
 }));
 
-// Auto-layout: arrange boxes by level, centered both horizontally and vertically
+// Auto-layout: arrange boxes/ellipses by level, centered both horizontally and vertically
 function layoutShapesByLevel(shapes: Shape[], canvasWidth: number, canvasHeight: number): Shape[] {
-  const boxes = shapes.filter((s): s is RectangleShape => s.type === 'rectangle');
-  const others = shapes.filter(s => s.type !== 'rectangle');
+  const boxes = shapes.filter((s): s is RectangleShape | EllipseShape => s.type === 'rectangle' || s.type === 'ellipse');
+  const others = shapes.filter(s => s.type !== 'rectangle' && s.type !== 'ellipse');
   
   if (boxes.length === 0) return shapes;
   
   // Group boxes by level
-  const levelGroups = new Map<number, RectangleShape[]>();
+  const levelGroups = new Map<number, (RectangleShape | EllipseShape)[]>();
   boxes.forEach(box => {
     const level = box.level ?? 0;
     if (!levelGroups.has(level)) levelGroups.set(level, []);
@@ -444,7 +455,7 @@ function layoutShapesByLevel(shapes: Shape[], canvasWidth: number, canvasHeight:
   const startY = Math.max(40, (canvasHeight - totalHeight) / 2);
   
   // Position each level
-  const positionedBoxes: RectangleShape[] = [];
+  const positionedBoxes: (RectangleShape | EllipseShape)[] = [];
   const sortedLevels = Array.from(levelGroups.keys()).sort((a, b) => a - b);
   
   sortedLevels.forEach((level, levelIndex) => {

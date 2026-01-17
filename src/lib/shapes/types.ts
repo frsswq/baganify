@@ -38,6 +38,12 @@ export interface EllipseShape extends BaseShape {
   type: 'ellipse';
   width: number;
   height: number;
+  // Embedded text label
+  label: string;
+  labelFontSize: number;
+  labelColor: string;
+  // Org chart level
+  level: number;
 }
 
 export interface TriangleShape extends BaseShape {
@@ -107,7 +113,7 @@ export function createRectangle(x: number, y: number, label = '', level = 0): Re
   };
 }
 
-export function createEllipse(x: number, y: number): EllipseShape {
+export function createEllipse(x: number, y: number, label = '', level = 0): EllipseShape {
   return {
     id: createId(),
     type: 'ellipse',
@@ -119,6 +125,10 @@ export function createEllipse(x: number, y: number): EllipseShape {
     stroke: DEFAULT_STROKE,
     strokeWidth: DEFAULT_STROKE_WIDTH,
     rotation: 0,
+    label,
+    labelFontSize: 10,
+    labelColor: '#000000',
+    level,
     stacked: false,
   };
 }

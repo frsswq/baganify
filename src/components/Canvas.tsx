@@ -1,7 +1,7 @@
 import { useRef, useState, useEffect } from 'react';
 import { useShapeStore } from '../lib/store/shapes';
 import { copyShapesToClipboard } from '../lib/clipboard/copy';
-import type { Shape, ElbowConnectorShape, TextShape, RectangleShape } from '../lib/shapes/types';
+import type { Shape, ElbowConnectorShape, TextShape, RectangleShape, EllipseShape } from '../lib/shapes/types';
 import { boundsIntersect } from '../lib/shapes/types';
 import { Toast } from './Toast';
 
@@ -154,7 +154,7 @@ export function Canvas() {
   };
 
   const handleDoubleClick = (shape: Shape) => {
-    if (shape.type === 'rectangle' || shape.type === 'text') {
+    if (shape.type === 'rectangle' || shape.type === 'text' || shape.type === 'ellipse') {
       setEditingId(shape.id);
     }
   };
@@ -165,6 +165,8 @@ export function Canvas() {
       updateShape(id, { label } as Partial<RectangleShape>);
     } else if (shape?.type === 'text') {
       updateShape(id, { text: label } as Partial<TextShape>);
+    } else if (shape?.type === 'ellipse') {
+      updateShape(id, { label } as Partial<EllipseShape>);
     }
   };
 
@@ -321,6 +323,42 @@ function ShapeRenderer({ shape, isSelected, isEditing, onClick, onDoubleClick, o
             />
           )}
           <ellipse cx={shape.x + shape.width / 2} cy={shape.y + shape.height / 2} rx={shape.width / 2} ry={shape.height / 2} fill={shape.fill} stroke={shape.stroke} strokeWidth={shape.strokeWidth} />
+          {isEditing ? (
+            <foreignObject x={shape.x} y={shape.y} width={shape.width} height={shape.height}>
+              <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 14 }}>
+                <textarea
+                  defaultValue={shape.label}
+                  autoFocus
+                  onChange={(e) => onLabelChange?.(e.target.value)}
+                  onBlur={onEditBlur}
+                  onKeyDown={(e) => e.key === 'Escape' && onEditBlur?.()}
+                  style={{
+                    width: '100%',
+                    height: '100%',
+                    fontSize: shape.labelFontSize,
+                    fontFamily: 'Arial, sans-serif',
+                    textAlign: 'center',
+                    background: 'transparent',
+                    border: 'none',
+                    outline: 'none',
+                    resize: 'none',
+                    color: shape.labelColor,
+                    lineHeight: 1.3,
+                  }}
+                />
+              </div>
+            </foreignObject>
+          ) : (
+            shape.label && (
+              <text x={shape.x + shape.width / 2} y={shape.y + shape.height / 2} fontSize={shape.labelFontSize} fontFamily="Arial, sans-serif" textAnchor="middle" dominantBaseline="middle" fill={shape.labelColor} pointerEvents="none">
+                {shape.label.split('\n').map((line, i, arr) => (
+                  <tspan key={i} x={shape.x + shape.width / 2} dy={i === 0 ? `${-(arr.length - 1) * 0.6}em` : '1.2em'}>
+                    {line}
+                  </tspan>
+                ))}
+              </text>
+            )
+          )}
           {renderHandles(shape.x, shape.y, shape.width, shape.height)}
         </g>
       );
