@@ -1,4 +1,5 @@
 import { useShapeStore } from '../lib/store/shapes';
+import { cn } from '../lib/utils';
 import { 
   Plus,
   ArrowCounterClockwise, 
@@ -15,7 +16,11 @@ export function Toolbar() {
   
   const selectedShapes = shapes.filter(s => selectedIds.has(s.id));
   const selectedShape = selectedShapes.length === 1 ? selectedShapes[0] : null;
-  const isBoxSelected = selectedShape?.type === 'rectangle';
+  const isBoxSelected = selectedShape?.type === 'rectangle' || selectedShape?.type === 'ellipse'; // Allow ellipse too for org chart
+
+  const hasParent = selectedShape ? shapes.some(s => 
+    s.type === 'elbow-connector' && s.endBinding?.shapeId === selectedShape.id
+  ) : false;
 
   return (
     <div className="absolute top-3 left-1/2 -translate-x-1/2 z-20">
@@ -38,8 +43,9 @@ export function Toolbar() {
               variant="ghost"
               size="sm"
               onClick={() => addParent(selectedShape!.id)}
-              title="Add Parent (Level Up)"
-              className="text-xs h-8 px-2 text-gray-700"
+              disabled={hasParent}
+              title={hasParent ? "Shape already has a parent" : "Add Parent (Level Up)"}
+              className={cn("text-xs h-8 px-2 text-gray-700", hasParent && "opacity-50 cursor-not-allowed")}
             >
               <ArrowUp size={16} weight="bold" className="mr-1.5" />
               Add Parent

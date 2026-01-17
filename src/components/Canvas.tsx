@@ -13,13 +13,15 @@ interface SelectionRect {
 }
 
 export function Canvas() {
-  const { shapes, selectedIds, selectShape, selectShapes, updateShape, clearSelection, deleteSelected, undo, redo, copySelected, pasteClipboard, setCanvasSize } = useShapeStore();
+  const { shapes, selectedIds, selectShape, selectShapes, updateShape, clearSelection, deleteSelected, undo, redo, copySelected, pasteClipboard, setCanvasSize, viewport, setViewport } = useShapeStore();
   const svgRef = useRef<SVGSVGElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const [size, setSize] = useState({ width: 800, height: 600 });
   const [selectionRect, setSelectionRect] = useState<SelectionRect | null>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [toast, setToast] = useState({ visible: false, message: '' });
+  const [isPanning, setIsPanning] = useState(false);
+  const lastMousePos = useRef({ x: 0, y: 0 });
 
   // Report size to store for centering
   useEffect(() => {
@@ -95,30 +97,70 @@ export function Canvas() {
         clearSelection();
         setEditingId(null);
       }
+      // Spacebar for panning
+      if (e.code === 'Space' && !editingId) {
+        document.body.style.cursor = 'grab';
+      }
     };
+
+    const handleKeyUp = (e: KeyboardEvent) => {
+       if (e.code === 'Space') {
+         document.body.style.cursor = 'default';
+         setIsPanning(false);
+       }
+    };
+
     window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
+    window.addEventListener('keyup', handleKeyUp);
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+      window.removeEventListener('keyup', handleKeyUp);
+    };
   }, [deleteSelected, clearSelection, editingId, undo, redo, copySelected, pasteClipboard, shapes, selectedIds]);
 
   const getSVGPoint = (clientX: number, clientY: number) => {
     const svg = svgRef.current;
     if (!svg) return null;
-    const pt = svg.createSVGPoint();
-    pt.x = clientX;
-    pt.y = clientY;
-    const ctm = svg.getScreenCTM();
-    if (!ctm) return null;
-    return pt.matrixTransform(ctm.inverse());
+    const rect = svg.getBoundingClientRect();
+    const x = (clientX - rect.left - viewport.x) / viewport.zoom;
+    const y = (clientY - rect.top - viewport.y) / viewport.zoom;
+    return { x, y };
   };
 
-  // Click to select (no dragging in org chart mode)
-  const handleShapeClick = (e: React.MouseEvent, shape: Shape) => {
-    e.stopPropagation();
-    const isMultiSelect = e.shiftKey || e.metaKey || e.ctrlKey;
-    selectShape(shape.id, isMultiSelect);
+  const handleWheel = (e: React.WheelEvent) => {
+    if (e.ctrlKey || e.metaKey) {
+      e.preventDefault();
+      const zoomSensitivity = 0.001;
+      const newZoom = Math.min(Math.max(0.1, viewport.zoom - e.deltaY * zoomSensitivity), 5);
+      
+      // Zoom towards mouse
+      const rect = svgRef.current?.getBoundingClientRect();
+      if (!rect) return;
+      
+      const mouseX = e.clientX - rect.left;
+      const mouseY = e.clientY - rect.top;
+      
+      const zoomFactor = newZoom / viewport.zoom;
+      
+      const newX = mouseX - (mouseX - viewport.x) * zoomFactor;
+      const newY = mouseY - (mouseY - viewport.y) * zoomFactor;
+
+      setViewport({ x: newX, y: newY, zoom: newZoom });
+    } else {
+      // Pan
+      setViewport({ ...viewport, x: viewport.x - e.deltaX, y: viewport.y - e.deltaY });
+    }
   };
 
-  const handleCanvasMouseDown = (e: React.MouseEvent) => {
+  const handleMouseDown = (e: React.MouseEvent) => {
+    if (e.button === 1 || (e.button === 0 && e.getModifierState('Space'))) {
+       e.preventDefault();
+       setIsPanning(true);
+       lastMousePos.current = { x: e.clientX, y: e.clientY };
+       document.body.style.cursor = 'grabbing';
+       return;
+    }
+
     const target = e.target as Element;
     if (target.getAttribute?.('data-canvas') === 'true') {
       const svgP = getSVGPoint(e.clientX, e.clientY);
@@ -131,6 +173,14 @@ export function Canvas() {
   };
 
   const handleMouseMove = (e: React.MouseEvent) => {
+    if (isPanning) {
+      const dx = e.clientX - lastMousePos.current.x;
+      const dy = e.clientY - lastMousePos.current.y;
+      setViewport({ ...viewport, x: viewport.x + dx, y: viewport.y + dy });
+      lastMousePos.current = { x: e.clientX, y: e.clientY };
+      return;
+    }
+
     if (!selectionRect) return;
     const svgP = getSVGPoint(e.clientX, e.clientY);
     if (!svgP) return;
@@ -138,6 +188,14 @@ export function Canvas() {
   };
 
   const handleMouseUp = () => {
+    if (isPanning) {
+       setIsPanning(false);
+       document.body.style.cursor = 'grab'; // Revert to grab if space is held, logic handled by key events mostly
+       // Actually simpler: just reset to default unless space is still held. 
+       // For now, let keyup handle the cursor reset.
+       return;
+    }
+
     if (selectionRect) {
       const rect = {
         x: Math.min(selectionRect.startX, selectionRect.currentX),
@@ -146,11 +204,25 @@ export function Canvas() {
         height: Math.abs(selectionRect.currentY - selectionRect.startY),
       };
       if (rect.width > 5 || rect.height > 5) {
+         // Need to check intersection with transformed shapes? 
+         // boundsIntersect uses logic coordinates. 
+         // selectionRect is in logic coordinates (transformed by getSVGPoint).
+         // So this should just work!
         const intersectingIds = shapes.filter(shape => boundsIntersect(rect, shape)).map(s => s.id);
         selectShapes(intersectingIds);
       }
       setSelectionRect(null);
     }
+  };
+
+
+  // ... (handleShapeClick, etc remain same, just update deps) ...
+  
+  // Click to select (no dragging in org chart mode)
+  const handleShapeClick = (e: React.MouseEvent, shape: Shape) => {
+    e.stopPropagation();
+    const isMultiSelect = e.shiftKey || e.metaKey || e.ctrlKey;
+    selectShape(shape.id, isMultiSelect);
   };
 
   const handleDoubleClick = (shape: Shape) => {
@@ -175,56 +247,76 @@ export function Canvas() {
   };
 
   return (
-    <div ref={containerRef} className="absolute inset-0">
+    <div ref={containerRef} className="absolute inset-0 overflow-hidden bg-[#fafafa]">
       <svg
         ref={svgRef}
         width={size.width}
         height={size.height}
-        className="w-full h-full"
-        onMouseDown={handleCanvasMouseDown}
+        className="w-full h-full touch-none select-none"
+        onMouseDown={handleMouseDown}
         onMouseMove={handleMouseMove}
         onMouseUp={handleMouseUp}
         onMouseLeave={handleMouseUp}
+        onWheel={handleWheel}
       >
         <defs>
           <pattern id="grid" width="20" height="20" patternUnits="userSpaceOnUse">
             <circle cx="2" cy="2" r="0.5" fill="#e5e5e5" />
           </pattern>
         </defs>
-        <rect data-canvas="true" width="100%" height="100%" fill="#fafafa" />
-        <rect data-canvas="true" width="100%" height="100%" fill="url(#grid)" />
         
-        {shapes.map((shape) => (
-          <ShapeRenderer
-            key={shape.id}
-            shape={shape}
-            isSelected={selectedIds.has(shape.id)}
-            isEditing={editingId === shape.id}
-            onClick={(e) => handleShapeClick(e, shape)}
-            onDoubleClick={() => handleDoubleClick(shape)}
-            onLabelChange={(label) => handleLabelChange(shape.id, label)}
-            onEditBlur={handleEditBlur}
-          />
-        ))}
+        {/* Background handles events but needs to span infinite... 
+            Actually, the panning moves the viewport. 
+            The grid should probably scale/pan or stay static?
+            Usually grid pans with content.
+         */}
         
-        {selectionRect && (
-          <rect
-            x={Math.min(selectionRect.startX, selectionRect.currentX)}
-            y={Math.min(selectionRect.startY, selectionRect.currentY)}
-            width={Math.abs(selectionRect.currentX - selectionRect.startX)}
-            height={Math.abs(selectionRect.currentY - selectionRect.startY)}
-            fill="rgba(0, 100, 200, 0.08)"
-            stroke="#0066cc"
-            strokeWidth="1"
-            strokeDasharray="4 2"
-          />
-        )}
+        <g transform={`translate(${viewport.x}, ${viewport.y}) scale(${viewport.zoom})`}>
+            {/* Infinite Grid Background - we need a huge rect or better logic. 
+                For simplicity, let's just make a huge rect around visible area or just inverse transform pattern?
+                Actually, putting the grid on the static SVG and changing patternTransform is better for performance usually.
+                But wrapping everything in <g> is easiest for React state.
+                Let's use a super large rect for now centered on 0,0.
+            */}
+             <rect x={-50000} y={-50000} width={100000} height={100000} fill="url(#grid)" data-canvas="true" />
+
+            {shapes.map((shape) => (
+              <ShapeRenderer
+                key={shape.id}
+                shape={shape}
+                isSelected={selectedIds.has(shape.id)}
+                isEditing={editingId === shape.id}
+                onClick={(e) => handleShapeClick(e, shape)}
+                onDoubleClick={() => handleDoubleClick(shape)}
+                onLabelChange={(label) => handleLabelChange(shape.id, label)}
+                onEditBlur={handleEditBlur}
+              />
+            ))}
+            
+            {selectionRect && (
+              <rect
+                x={Math.min(selectionRect.startX, selectionRect.currentX)}
+                y={Math.min(selectionRect.startY, selectionRect.currentY)}
+                width={Math.abs(selectionRect.currentX - selectionRect.startX)}
+                height={Math.abs(selectionRect.currentY - selectionRect.startY)}
+                fill="rgba(0, 100, 200, 0.08)"
+                stroke="#0066cc"
+                strokeWidth={1 / viewport.zoom} // Keep stroke constant width visually
+                strokeDasharray={`${4/viewport.zoom} ${2/viewport.zoom}`}
+              />
+            )}
+        </g>
       </svg>
       <Toast 
         message={toast.message} 
         visible={toast.visible} 
         onClose={() => setToast({ ...toast, visible: false })} 
       />
+      
+       {/* Zoom Indicator */}
+       <div className="absolute bottom-4 right-4 bg-white/90 backdrop-blur px-2 py-1 rounded border border-gray-200 text-xs font-mono text-gray-600 shadow-sm pointer-events-none select-none">
+         {Math.round(viewport.zoom * 100)}%
+       </div>
     </div>
   );
 }

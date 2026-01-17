@@ -15,6 +15,7 @@ interface ShapeStore {
   shapes: Shape[];
   selectedIds: Set<string>;
   canvasSize: { width: number; height: number };
+  viewport: { x: number; y: number; zoom: number };
   
   // History
   history: HistoryState[];
@@ -25,6 +26,7 @@ interface ShapeStore {
   
   // Actions
   setCanvasSize: (width: number, height: number) => void;
+  setViewport: (viewport: { x: number; y: number; zoom: number }) => void;
   addShape: (shape: Shape) => void;
   addBoxAtLevel: (level: number) => void;
   removeShape: (id: string) => void;
@@ -62,10 +64,13 @@ export const useShapeStore = create<ShapeStore>((set, get) => ({
   shapes: [],
   selectedIds: new Set(),
   canvasSize: { width: 1200, height: 800 },
+  viewport: { x: 0, y: 0, zoom: 1 },
   history: [],
   historyIndex: -1,
   clipboard: [],
   
+  setViewport: (viewport) => set({ viewport }),
+
   setCanvasSize: (width, height) => {
     set({ canvasSize: { width, height } });
     // Re-layout with new size
@@ -355,6 +360,16 @@ export const useShapeStore = create<ShapeStore>((set, get) => ({
     const { shapes, canvasSize } = get();
     const currentShape = shapes.find(s => s.id === shapeId) as RectangleShape | EllipseShape;
     if (!currentShape || (currentShape.type !== 'rectangle' && currentShape.type !== 'ellipse')) return;
+
+    // Check if shape already has a parent (incoming connector)
+    const hasParent = shapes.some(s => 
+      s.type === 'elbow-connector' && s.endBinding?.shapeId === shapeId
+    );
+    
+    if (hasParent) {
+      // Maybe toast here? For now just silent return as button will be disabled
+      return;
+    }
     
     // Create parent box at level - 1
     const level = (currentShape.level ?? 0) - 1;
@@ -434,43 +449,198 @@ export const useShapeStore = create<ShapeStore>((set, get) => ({
   },
 }));
 
-// Auto-layout: arrange boxes/ellipses by level, centered both horizontally and vertically
+// Tree Layout Algorithm
 function layoutShapesByLevel(shapes: Shape[], canvasWidth: number, canvasHeight: number): Shape[] {
   const boxes = shapes.filter((s): s is RectangleShape | EllipseShape => s.type === 'rectangle' || s.type === 'ellipse');
-  const others = shapes.filter(s => s.type !== 'rectangle' && s.type !== 'ellipse');
+  const connectors = shapes.filter((s): s is ElbowConnectorShape => s.type === 'elbow-connector');
+  const others = shapes.filter(s => s.type !== 'rectangle' && s.type !== 'ellipse' && s.type !== 'elbow-connector');
   
   if (boxes.length === 0) return shapes;
   
-  // Group boxes by level
-  const levelGroups = new Map<number, (RectangleShape | EllipseShape)[]>();
-  boxes.forEach(box => {
-    const level = box.level ?? 0;
-    if (!levelGroups.has(level)) levelGroups.set(level, []);
-    levelGroups.get(level)!.push(box);
+  // 1. Build Graph
+  const { parentMap, childrenMap } = buildGraph(boxes, connectors);
+  
+  // 2. Find Roots (nodes with no parents)
+  const roots = boxes.filter(box => !parentMap.has(box.id));
+  
+  // If no roots found (circular dependency or empty), fallback to first box as root or existing layout?
+  // If purely circular, this is tricky. Let's assume DAG for org chart.
+  // If strictly circular, we might pick arbitrary roots.
+  // For now, if no roots but boxes exist, pick the specific boxes with min level or arbitrary.
+  if (roots.length === 0 && boxes.length > 0) {
+    // Fallback: treat top-most level boxes as roots layout
+    // Or just pick one. Let's stick to original behavior logic if totally cyclic, 
+    // but users rarely make fully cyclic org charts. 
+    // Simply picking one breaks the cycle.
+    roots.push(boxes[0]); 
+  }
+
+  // 3. Prepare Layout Data
+  const layoutData = new Map<string, { width: number; height: number; x: number; y: number }>();
+  
+  // 4. Calculate Subtree Dimensions (Post-Order)
+  // We need to handle forests (multiple roots).
+  // We'll layout trees side-by-side.
+  
+  let currentForestX = 0;
+  
+  // Sort roots by x position to preserve relative order if possible? 
+  // No, typical auto-layout resets X. Sorting by ID is stable.
+  roots.sort((a, b) => a.x - b.x);
+
+  const forestData = roots.map(root => {
+    const dim = calculateSubtreeDimensions(root.id, childrenMap, boxes, layoutData);
+    return { root, dim };
   });
   
-  // Calculate total height to center vertically
-  const numLevels = levelGroups.size;
-  const totalHeight = numLevels * LEVEL_HEIGHT;
-  const startY = Math.max(40, (canvasHeight - totalHeight) / 2);
+  const totalForestWidth = forestData.reduce((sum, { dim }) => sum + dim.width, 0) + (forestData.length - 1) * SHAPE_GAP;
+  const maxForestHeight = Math.max(...forestData.map(f => f.dim.height));
   
-  // Position each level
+  const startX = (canvasWidth - totalForestWidth) / 2;
+  const startY = Math.max(40, (canvasHeight - maxForestHeight) / 2);
+  
+  currentForestX = startX;
+  
+  // 5. Assign Positions (Pre-Order)
+  const positionedBoxIds = new Set<string>();
   const positionedBoxes: (RectangleShape | EllipseShape)[] = [];
-  const sortedLevels = Array.from(levelGroups.keys()).sort((a, b) => a - b);
   
-  sortedLevels.forEach((level, levelIndex) => {
-    const levelBoxes = levelGroups.get(level)!;
-    const totalWidth = levelBoxes.reduce((sum, box) => sum + box.width, 0) + (levelBoxes.length - 1) * SHAPE_GAP;
-    let startX = (canvasWidth - totalWidth) / 2;
-    const y = startY + levelIndex * LEVEL_HEIGHT;
-    
-    levelBoxes.forEach(box => {
-      positionedBoxes.push({ ...box, x: startX, y });
-      startX += box.width + SHAPE_GAP;
-    });
+  forestData.forEach(({ root, dim }) => {
+    layoutTreeRecursive(root.id, currentForestX, startY, dim.width, childrenMap, boxes, layoutData, positionedBoxes, positionedBoxIds);
+    currentForestX += dim.width + SHAPE_GAP;
   });
   
-  return [...positionedBoxes, ...others];
+  // 6. Handle disconnected nodes / cycles that weren't visited
+  // (e.g. if graph had cycles not reachable from roots? or separate islands)
+  // The 'roots' logic covers all connected components where at least one node has in-degree 0.
+  // Pure cycles won't be in 'roots'. 
+  // We should do a pass for unvisited nodes and layout them too?
+  const unvisited = boxes.filter(b => !positionedBoxIds.has(b.id));
+  if (unvisited.length > 0) {
+    // Just place them below or keep original position?
+    // Let's place them at the bottom.
+    unvisited.forEach(box => positionedBoxes.push(box));
+  }
+  
+  return [...positionedBoxes, ...connectors, ...others];
+}
+
+// Graph Helpers
+function buildGraph(boxes: (RectangleShape | EllipseShape)[], connectors: ElbowConnectorShape[]) {
+  const parentMap = new Map<string, string>(); // Child -> Parent (Single parent enforced now)
+  const childrenMap = new Map<string, string[]>(); // Parent -> Children[]
+
+  // Map ID to Box for easy lookup
+  const boxMap = new Map(boxes.map(b => [b.id, b]));
+
+  connectors.forEach(conn => {
+    // Org Chart flow: Top (Parent) -> Bottom (Child)
+    // We look at bindings.
+    if (!conn.startBinding || !conn.endBinding) return;
+    
+    // Validate we are connecting two boxes
+    const startBox = boxMap.get(conn.startBinding.shapeId);
+    const endBox = boxMap.get(conn.endBinding.shapeId);
+    if (!startBox || !endBox) return;
+
+    // Convention: Start -> End.
+    // Usually Start is top (Parent), End is bottom (Child).
+    // Let's verify strict direction or just trust connection?
+    // User draws Start->End. 
+    // If Start is "above" End (y < y), Start is Parent.
+    // If we want to strictly enforce hierarchy by connection direction:
+    const parentId = startBox.id;
+    const childId = endBox.id;
+
+    parentMap.set(childId, parentId);
+    
+    if (!childrenMap.has(parentId)) childrenMap.set(parentId, []);
+    childrenMap.get(parentId)!.push(childId);
+  });
+  
+  return { parentMap, childrenMap };
+}
+
+function calculateSubtreeDimensions(
+  nodeId: string, 
+  childrenMap: Map<string, string[]>, 
+  boxes: (RectangleShape | EllipseShape)[], 
+  layoutData: Map<string, { width: number; height: number; x: number; y: number }>
+): { width: number; height: number } {
+  const node = boxes.find(b => b.id === nodeId);
+  if (!node) return { width: 0, height: 0 };
+  
+  const childrenIds = childrenMap.get(nodeId) || [];
+  
+  if (childrenIds.length === 0) {
+    const dim = { width: node.width, height: node.height };
+    layoutData.set(nodeId, { ...dim, x: 0, y: 0 }); // Relative coords placeholder
+    return dim;
+  }
+  
+  // Recursively calculate children dimensions
+  const childrenDims = childrenIds.map(childId => calculateSubtreeDimensions(childId, childrenMap, boxes, layoutData));
+  
+  const totalChildrenWidth = childrenDims.reduce((sum, d) => sum + d.width, 0) + (childrenDims.length - 1) * SHAPE_GAP;
+  
+  // Subtree width is max of node width and children width
+  const subtreeWidth = Math.max(node.width, totalChildrenWidth);
+  const subtreeHeight = node.height + LEVEL_HEIGHT + Math.max(...childrenDims.map(d => d.height)); // Approx depth
+  
+  layoutData.set(nodeId, { width: subtreeWidth, height: subtreeHeight, x: 0, y: 0 });
+  
+  return { width: subtreeWidth, height: subtreeHeight };
+}
+
+function layoutTreeRecursive(
+  nodeId: string,
+  x: number,
+  y: number,
+  availableWidth: number,
+  childrenMap: Map<string, string[]>,
+  boxes: (RectangleShape | EllipseShape)[],
+  layoutData: Map<string, any>,
+  result: (RectangleShape | EllipseShape)[],
+  visited: Set<string>
+) {
+  if (visited.has(nodeId)) return;
+  visited.add(nodeId);
+  
+  const node = boxes.find(b => b.id === nodeId);
+  if (!node) return;
+  
+  // Center this node within the available width
+  const nodeX = x + (availableWidth - node.width) / 2;
+  const nodeY = y;
+  
+  result.push({ ...node, x: nodeX, y: nodeY, level: Math.round((nodeY - 40) / LEVEL_HEIGHT) }); // Update level based on Y
+  
+  // Layout Children
+  const childrenIds = childrenMap.get(nodeId) || [];
+  if (childrenIds.length === 0) return;
+  
+  // Calculate starting X for children block to center it under parent
+  // Actually, we allocated 'availableWidth' which matches the subtree width.
+  // We just fill it left-to-right.
+  
+  let currentChildX = x;
+  // If children width < availableWidth (parent is wider), we need to center the children block?
+  // Our subtree width calc was Max(Parent, Children).
+  // If Parent > Children, availableWidth = ParentWidth. Children block width < ParentWidth.
+  // So we center the children block.
+  
+  const childrenDims = childrenIds.map(id => layoutData.get(id));
+  const totalChildrenWidth = childrenDims.reduce((sum, d) => sum + d.width, 0) + (childrenDims.length - 1) * SHAPE_GAP;
+  
+  if (totalChildrenWidth < availableWidth) {
+    currentChildX += (availableWidth - totalChildrenWidth) / 2;
+  }
+  
+  childrenIds.forEach((childId, index) => {
+    const dim = childrenDims[index];
+    layoutTreeRecursive(childId, currentChildX, y + LEVEL_HEIGHT, dim.width, childrenMap, boxes, layoutData, result, visited);
+    currentChildX += dim.width + SHAPE_GAP;
+  });
 }
 
 // Update all connector positions based on their bindings
