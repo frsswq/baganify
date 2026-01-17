@@ -13,27 +13,33 @@ function ShapeBuilder() {
 
   return (
     <div className="relative w-full h-dvh overflow-hidden bg-[#f8f9fa]">
-      {/* Top Toolbar - Excalidraw style */}
-      <Toolbar />
+      {/* Scrollable Canvas Area */}
+      <div className="w-full h-full overflow-auto">
+        <Canvas />
+      </div>
 
-      {/* Full Canvas */}
-      <Canvas />
+      {/* Fixed Overlay UI */}
+      <div className="fixed top-0 left-0 right-0 z-50 pointer-events-none">
+        <div className="pointer-events-auto">
+          <Toolbar />
+        </div>
+      </div>
 
       {/* Floating Property Panel - appears when shape selected */}
       {hasSelection && (
-        <div className="absolute left-3 top-20 z-10">
+        <div className="fixed left-3 top-20 z-50">
           <PropertyPanel />
         </div>
       )}
 
       {/* Export Panel - bottom left */}
-      <div className="absolute left-3 bottom-3 z-10">
+      <div className="fixed left-3 bottom-3 z-50">
         <ExportPanel />
       </div>
 
       {/* Shape count badge */}
       {shapes.length > 0 && (
-        <div className="absolute right-3 bottom-3 px-2 py-1 bg-white rounded-lg shadow-sm border border-gray-200 text-xs text-gray-500">
+        <div className="fixed right-3 bottom-3 px-2 py-1 bg-white rounded-lg shadow-sm border border-gray-200 text-xs text-gray-500 z-50">
           {shapes.length} shape{shapes.length !== 1 ? 's' : ''}
         </div>
       )}

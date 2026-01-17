@@ -80,7 +80,7 @@ export type Shape = RectangleShape | EllipseShape | TriangleShape | TextShape | 
 // Default values
 export const DEFAULT_FILL = '#ffffff';
 export const DEFAULT_STROKE = '#000000';
-export const DEFAULT_STROKE_WIDTH = 1;
+export const DEFAULT_STROKE_WIDTH = 1.25;
 
 export function createId(): string {
   return Math.random().toString(36).substring(2, 11);
@@ -100,7 +100,7 @@ export function createRectangle(x: number, y: number, label = '', level = 0): Re
     rotation: 0,
     cornerRadius: 0,
     label,
-    labelFontSize: 12,
+    labelFontSize: 10,
     labelColor: '#000000',
     level,
     stacked: false,
@@ -145,8 +145,8 @@ export function createText(x: number, y: number, text = 'Text'): TextShape {
     x,
     y,
     text,
-    fontSize: 20,
-    fontFamily: 'sans-serif',
+    fontSize: 10,
+    fontFamily: 'Arial, sans-serif',
     textAlign: 'center',
     width: 100,
     height: 30,

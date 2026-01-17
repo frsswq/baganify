@@ -10,23 +10,17 @@ export function shapeToSVG(shape: Shape): string {
   
   switch (shape.type) {
     case 'rectangle':
-      const rectSvg = `<rect 
-        x="${shape.x}" 
-        y="${shape.y}" 
-        width="${shape.width}" 
-        height="${shape.height}" 
-        rx="${shape.cornerRadius}"
+      const rectPath = getRectPath(shape.x, shape.y, shape.width, shape.height, shape.cornerRadius || 0);
+      const rectSvg = `<path 
+        d="${rectPath}" 
         fill="${shape.fill}" 
         stroke="${shape.stroke}" 
         stroke-width="${shape.strokeWidth}"${transform} />`;
       
       if (shape.stacked) {
-        return `<rect 
-          x="${shape.x + 3}" 
-          y="${shape.y - 3}" 
-          width="${shape.width}" 
-          height="${shape.height}" 
-          rx="${shape.cornerRadius}"
+        const backPath = getRectPath(shape.x + 3, shape.y - 3, shape.width, shape.height, shape.cornerRadius || 0);
+        return `<path 
+          d="${backPath}" 
           fill="${shape.fill}" 
           stroke="${shape.stroke}" 
           stroke-width="${shape.strokeWidth}"${transform} />
@@ -35,21 +29,17 @@ export function shapeToSVG(shape: Shape): string {
       return rectSvg;
     
     case 'ellipse':
-      const ellipseSvg = `<ellipse 
-        cx="${shape.x + shape.width / 2}" 
-        cy="${shape.y + shape.height / 2}" 
-        rx="${shape.width / 2}" 
-        ry="${shape.height / 2}" 
+      const ellipsePath = getEllipsePath(shape.x, shape.y, shape.width, shape.height);
+      const ellipseSvg = `<path 
+        d="${ellipsePath}" 
         fill="${shape.fill}" 
         stroke="${shape.stroke}" 
         stroke-width="${shape.strokeWidth}"${transform} />`;
       
       if (shape.stacked) {
-        return `<ellipse 
-          cx="${shape.x + shape.width / 2 + 3}" 
-          cy="${shape.y + shape.height / 2 - 3}" 
-          rx="${shape.width / 2}" 
-          ry="${shape.height / 2}" 
+        const backPath = getEllipsePath(shape.x + 3, shape.y - 3, shape.width, shape.height);
+        return `<path 
+          d="${backPath}" 
           fill="${shape.fill}" 
           stroke="${shape.stroke}" 
           stroke-width="${shape.strokeWidth}"${transform} />
@@ -73,7 +63,9 @@ export function shapeToSVG(shape: Shape): string {
         stroke="${shape.stroke}" 
         stroke-width="${shape.strokeWidth}" 
         stroke-linecap="round" 
-        stroke-linejoin="round" />`;
+        stroke-linejoin="round" />
+        ${renderArrowhead(shape, 'start')}
+        ${renderArrowhead(shape, 'end')}`;
     
     default:
       return '';
@@ -172,4 +164,86 @@ export function getShapesBoundingBox(shapes: Shape[]): { x: number; y: number; w
     width: maxX - minX + padding * 2,
     height: maxY - minY + padding * 2,
   };
+}
+
+function getRectPath(x: number, y: number, width: number, height: number, rx: number): string {
+  // Clamp rx to prevent artifacts if shape is smaller than radius
+  const maxRx = Math.min(width, height) / 2;
+  const radius = Math.min(Math.max(rx, 0), maxRx);
+
+  // If no corner radius, simple rect
+  if (radius === 0) {
+    return `M ${x} ${y} L ${x + width} ${y} L ${x + width} ${y + height} L ${x} ${y + height} Z`;
+  }
+  
+  // Custom path for rounded rect (better compatibility than <rect rx>)
+  return `M ${x + radius} ${y} 
+    L ${x + width - radius} ${y} 
+    Q ${x + width} ${y} ${x + width} ${y + radius} 
+    L ${x + width} ${y + height - radius} 
+    Q ${x + width} ${y + height} ${x + width - radius} ${y + height} 
+    L ${x + radius} ${y + height} 
+    Q ${x} ${y + height} ${x} ${y + height - radius} 
+    L ${x} ${y + radius} 
+    Q ${x} ${y} ${x + radius} ${y} Z`.replace(/\s+/g, ' ');
+}
+
+function getEllipsePath(x: number, y: number, width: number, height: number): string {
+  const cy = y + height / 2;
+  const rx = width / 2;
+  const ry = height / 2;
+  
+  return `M ${x} ${cy} 
+    A ${rx} ${ry} 0 1 1 ${x + width} ${cy} 
+    A ${rx} ${ry} 0 1 1 ${x} ${cy} Z`.replace(/\s+/g, ' ');
+}
+
+function renderArrowhead(shape: ElbowConnectorShape, position: 'start' | 'end'): string {
+  const type = position === 'start' ? shape.startArrowhead : shape.endArrowhead;
+  if (type === 'none') return '';
+
+  const { startPoint, endPoint, startDirection } = shape;
+  let x: number, y: number, rotation: number;
+
+  if (position === 'start') {
+    x = startPoint.x;
+    y = startPoint.y;
+    // Determine start direction (opposite of path)
+    if (startDirection === 'horizontal') {
+      // Path goes (startX, startY) -> (midX, startY)
+      // Arrow points opposite to (midX - startX)
+      const midX = (startPoint.x + endPoint.x) / 2;
+      rotation = midX > startPoint.x ? 180 : 0;
+    } else {
+      // Path goes (startX, startY) -> (startX, midY)
+      // Arrow points opposite to (midY - startY)
+      const midY = (startPoint.y + endPoint.y) / 2;
+      rotation = midY > startPoint.y ? 270 : 90;
+    }
+  } else {
+    x = endPoint.x;
+    y = endPoint.y;
+    // Determine end direction (same as path arrival)
+    if (startDirection === 'horizontal') {
+      // Path comes from (midX, endY) -> (endX, endY)
+      const midX = (startPoint.x + endPoint.x) / 2;
+      rotation = endPoint.x > midX ? 0 : 180;
+    } else {
+      // Path comes from (endX, midY) -> (endX, endY)
+      const midY = (startPoint.y + endPoint.y) / 2;
+      rotation = endPoint.y > midY ? 90 : 270;
+    }
+  }
+
+  const transform = `transform="translate(${x}, ${y}) rotate(${rotation})"`;
+  
+  if (type === 'arrow') {
+    // Standard arrow
+    return `<path d="M -10 -5 L 0 0 L -10 5" fill="none" stroke="${shape.stroke}" stroke-width="${shape.strokeWidth}" stroke-linecap="round" stroke-linejoin="round" ${transform} />`;
+  } else if (type === 'bar') {
+    // Bar/T-shape
+    return `<path d="M 0 -6 L 0 6" fill="none" stroke="${shape.stroke}" stroke-width="${shape.strokeWidth}" stroke-linecap="round" ${transform} />`;
+  }
+  
+  return '';
 }

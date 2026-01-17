@@ -1,7 +1,9 @@
 import { useRef, useState, useEffect } from 'react';
 import { useShapeStore } from '../lib/store/shapes';
+import { copyShapesToClipboard } from '../lib/clipboard/copy';
 import type { Shape, ElbowConnectorShape, TextShape, RectangleShape } from '../lib/shapes/types';
 import { boundsIntersect } from '../lib/shapes/types';
+import { Toast } from './Toast';
 
 interface SelectionRect {
   startX: number;
@@ -17,36 +19,61 @@ export function Canvas() {
   const [size, setSize] = useState({ width: 800, height: 600 });
   const [selectionRect, setSelectionRect] = useState<SelectionRect | null>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [toast, setToast] = useState({ visible: false, message: '' });
 
   // Report size to store for centering
   useEffect(() => {
-    const updateSize = () => {
-      if (containerRef.current) {
-        const newSize = {
-          width: containerRef.current.clientWidth,
-          height: containerRef.current.clientHeight,
-        };
-        setSize(newSize);
-        setCanvasSize(newSize.width, newSize.height);
+    if (!containerRef.current) return;
+    
+    // Use ResizeObserver for more robust zoom/layout handling
+    const resizeObserver = new ResizeObserver((entries) => {
+      for (const entry of entries) {
+        if (entry.contentBoxSize) {
+           // entry.target.clientWidth is trustworthy for DOM elements in CSS pixels
+           const width = entry.target.clientWidth;
+           const height = entry.target.clientHeight;
+           setSize({ width, height });
+           setCanvasSize(width, height);
+        }
       }
+    });
+
+    resizeObserver.observe(containerRef.current);
+    
+    return () => {
+      resizeObserver.disconnect();
     };
-    updateSize();
-    window.addEventListener('resize', updateSize);
-    return () => window.removeEventListener('resize', updateSize);
   }, [setCanvasSize]);
 
   useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
+    const handleKeyDown = async (e: KeyboardEvent) => {
       if ((e.ctrlKey || e.metaKey) && e.key === 'c') {
         if (editingId) return;
         e.preventDefault();
+        
+        // Internal copy
         copySelected();
+        
+        // System clipboard copy (SVG)
+        const selectedShapes = shapes.filter(s => selectedIds.has(s.id));
+        if (selectedShapes.length > 0) {
+          try {
+            await copyShapesToClipboard(selectedShapes);
+            setToast({ visible: true, message: 'Copied to clipboard' });
+          } catch (err) {
+            console.error('Failed to copy to clipboard', err);
+            // Still show toast if internal copy worked, but maybe different message?
+            // User mostly cares about "it worked"
+            setToast({ visible: true, message: 'Copied to clipboard' });
+          }
+        }
         return;
       }
       if ((e.ctrlKey || e.metaKey) && e.key === 'v') {
         if (editingId) return;
         e.preventDefault();
         pasteClipboard();
+        setToast({ visible: true, message: 'Pasted from clipboard' });
         return;
       }
       if ((e.ctrlKey || e.metaKey) && e.key === 'z' && !e.shiftKey) {
@@ -71,7 +98,7 @@ export function Canvas() {
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [deleteSelected, clearSelection, editingId, undo, redo, copySelected, pasteClipboard]);
+  }, [deleteSelected, clearSelection, editingId, undo, redo, copySelected, pasteClipboard, shapes, selectedIds]);
 
   const getSVGPoint = (clientX: number, clientY: number) => {
     const svg = svgRef.current;
@@ -191,6 +218,11 @@ export function Canvas() {
           />
         )}
       </svg>
+      <Toast 
+        message={toast.message} 
+        visible={toast.visible} 
+        onClose={() => setToast({ ...toast, visible: false })} 
+      />
     </div>
   );
 }
@@ -247,7 +279,7 @@ function ShapeRenderer({ shape, isSelected, isEditing, onClick, onDoubleClick, o
                     width: '100%',
                     height: '100%',
                     fontSize: shape.labelFontSize,
-                    fontFamily: 'Inter, sans-serif',
+                    fontFamily: 'Arial, sans-serif',
                     textAlign: 'center',
                     background: 'transparent',
                     border: 'none',
@@ -261,7 +293,7 @@ function ShapeRenderer({ shape, isSelected, isEditing, onClick, onDoubleClick, o
             </foreignObject>
           ) : (
             shape.label && (
-              <text x={cx} y={cy} fontSize={shape.labelFontSize} fontFamily="Inter, sans-serif" textAnchor="middle" dominantBaseline="middle" fill={shape.labelColor} pointerEvents="none">
+              <text x={cx} y={cy} fontSize={shape.labelFontSize} fontFamily="Arial, sans-serif" textAnchor="middle" dominantBaseline="middle" fill={shape.labelColor} pointerEvents="none">
                 {shape.label.split('\n').map((line, i, arr) => (
                   <tspan key={i} x={cx} dy={i === 0 ? `${-(arr.length - 1) * 0.6}em` : '1.2em'}>
                     {line}
@@ -314,12 +346,12 @@ function ShapeRenderer({ shape, isSelected, isEditing, onClick, onDoubleClick, o
                 onChange={(e) => onLabelChange?.(e.target.value)}
                 onBlur={onEditBlur}
                 onKeyDown={(e) => e.key === 'Enter' && onEditBlur?.()}
-                style={{ width: '100%', fontSize: shape.fontSize, fontFamily: 'Inter, sans-serif', background: 'white', border: '1px solid #0066cc', borderRadius: 2, padding: '2px 6px', outline: 'none' }}
+                style={{ width: '100%', fontSize: shape.fontSize, fontFamily: 'Arial, sans-serif', background: 'white', border: '1px solid #0066cc', borderRadius: 2, padding: '2px 6px', outline: 'none' }}
               />
             </foreignObject>
           ) : (
             <>
-              <text x={shape.x + shape.width / 2} y={shape.y + shape.height / 2} fontSize={shape.fontSize} fontFamily="Inter, sans-serif" textAnchor="middle" dominantBaseline="middle" fill={shape.fill}>
+              <text x={shape.x + shape.width / 2} y={shape.y + shape.height / 2} fontSize={shape.fontSize} fontFamily="Arial, sans-serif" textAnchor="middle" dominantBaseline="middle" fill={shape.fill}>
                 {shape.text}
               </text>
               {renderHandles(shape.x, shape.y, shape.width, shape.height)}
@@ -334,6 +366,8 @@ function ShapeRenderer({ shape, isSelected, isEditing, onClick, onDoubleClick, o
         <g onClick={onClick} style={{ cursor: 'pointer' }}>
           <path d={path} fill="none" stroke="transparent" strokeWidth={10} />
           <path d={path} fill="none" stroke={shape.stroke} strokeWidth={shape.strokeWidth} strokeLinecap="round" strokeLinejoin="round" />
+          <Arrowhead shape={shape} position="start" />
+          <Arrowhead shape={shape} position="end" />
           {isSelected && (
             <path d={path} fill="none" stroke="#0066cc" strokeWidth="1.5" strokeDasharray="4 2" pointerEvents="none" />
           )}
@@ -343,6 +377,66 @@ function ShapeRenderer({ shape, isSelected, isEditing, onClick, onDoubleClick, o
     default:
       return null;
   }
+}
+
+function Arrowhead({ shape, position }: { shape: ElbowConnectorShape; position: 'start' | 'end' }) {
+  const type = position === 'start' ? shape.startArrowhead : shape.endArrowhead;
+  if (type === 'none') return null;
+
+  const { startPoint, endPoint, startDirection } = shape;
+  let x: number, y: number, rotation: number;
+
+  if (position === 'start') {
+    x = startPoint.x;
+    y = startPoint.y;
+    if (startDirection === 'horizontal') {
+      const midX = (startPoint.x + endPoint.x) / 2;
+      rotation = midX > startPoint.x ? 180 : 0;
+    } else {
+      const midY = (startPoint.y + endPoint.y) / 2;
+      rotation = midY > startPoint.y ? 270 : 90;
+    }
+  } else {
+    x = endPoint.x;
+    y = endPoint.y;
+    if (startDirection === 'horizontal') {
+      const midX = (startPoint.x + endPoint.x) / 2;
+      rotation = endPoint.x > midX ? 0 : 180;
+    } else {
+      const midY = (startPoint.y + endPoint.y) / 2;
+      rotation = endPoint.y > midY ? 90 : 270;
+    }
+  }
+
+  const transform = `translate(${x}, ${y}) rotate(${rotation})`;
+
+  if (type === 'arrow') {
+    return (
+      <path
+        d="M -10 -5 L 0 0 L -10 5"
+        fill="none"
+        stroke={shape.stroke}
+        strokeWidth={shape.strokeWidth}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        transform={transform}
+        pointerEvents="none"
+      />
+    );
+  } else if (type === 'bar') {
+    return (
+      <path
+        d="M 0 -6 L 0 6"
+        fill="none"
+        stroke={shape.stroke}
+        strokeWidth={shape.strokeWidth}
+        strokeLinecap="round"
+        transform={transform}
+        pointerEvents="none"
+      />
+    );
+  }
+  return null;
 }
 
 function getElbowPath(shape: ElbowConnectorShape): string {
