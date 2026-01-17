@@ -52,8 +52,3 @@ bun run build
 - **styling**: tailwind css v4 + base ui
 - **state**: zustand
 - **icons**: phosphor icons
-
----
-<div align="center">
-  <sub>built with ❤️ using <a href="https://bun.sh">bun</a></sub>
-</div>
