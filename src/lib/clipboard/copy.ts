@@ -19,7 +19,24 @@ export async function copyShapesToClipboard(shapes: Shape[]): Promise<{ success:
   }
   
   const bbox = getShapesBoundingBox(shapes);
-  const svgContent = shapesToSVGDocument(shapes, bbox.width, bbox.height);
+  
+  // Normalize shapes to start at (0,0) (with padding)
+  const normalizedShapes = shapes.map(shape => {
+    const s = { ...shape };
+    if (s.type === 'elbow-connector') {
+      s.startPoint = { x: s.startPoint.x - bbox.x, y: s.startPoint.y - bbox.y };
+      s.endPoint = { x: s.endPoint.x - bbox.x, y: s.endPoint.y - bbox.y };
+      // Also update x/y just in case they are used
+      s.x = s.x - bbox.x;
+      s.y = s.y - bbox.y;
+    } else {
+      s.x = s.x - bbox.x;
+      s.y = s.y - bbox.y;
+    }
+    return s;
+  });
+
+  const svgContent = shapesToSVGDocument(normalizedShapes, bbox.width, bbox.height);
   
   try {
     // Try SVG clipboard first (Chromium browsers)
@@ -97,7 +114,23 @@ async function svgToPng(svgContent: string, width: number, height: number): Prom
  */
 export function downloadAsSVG(shapes: Shape[], filename = 'shapes.svg'): void {
   const bbox = getShapesBoundingBox(shapes);
-  const svgContent = shapesToSVGDocument(shapes, bbox.width, bbox.height);
+  
+  // Normalize shapes to start at (0,0) (with padding)
+  const normalizedShapes = shapes.map(shape => {
+    const s = { ...shape };
+    if (s.type === 'elbow-connector') {
+      s.startPoint = { x: s.startPoint.x - bbox.x, y: s.startPoint.y - bbox.y };
+      s.endPoint = { x: s.endPoint.x - bbox.x, y: s.endPoint.y - bbox.y };
+      s.x = s.x - bbox.x;
+      s.y = s.y - bbox.y;
+    } else {
+      s.x = s.x - bbox.x;
+      s.y = s.y - bbox.y;
+    }
+    return s;
+  });
+
+  const svgContent = shapesToSVGDocument(normalizedShapes, bbox.width, bbox.height);
   
   const blob = new Blob([svgContent], { type: 'image/svg+xml' });
   const url = URL.createObjectURL(blob);

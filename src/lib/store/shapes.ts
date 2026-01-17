@@ -47,6 +47,11 @@ interface ShapeStore {
   copySelected: () => void;
   pasteClipboard: () => void;
   
+  // Connector actions
+  connectSelectedShapes: () => boolean;
+  addParent: (shapeId: string) => void;
+  addChild: (shapeId: string) => void;
+  
   getSelectedShapes: () => Shape[];
 }
 
@@ -281,6 +286,133 @@ export const useShapeStore = create<ShapeStore>((set, get) => ({
       return {
         shapes: updateAllConnectors(layouted),
         selectedIds: new Set(newShapes.map(s => s.id)),
+      };
+    });
+  },
+
+  connectSelectedShapes: () => {
+    const { shapes, selectedIds } = get();
+    // Only connect rectangles in this mode, or any shape? keeping generic for now
+    const selectedShapes = shapes.filter(s => selectedIds.has(s.id) && s.type !== 'elbow-connector');
+    
+    if (selectedShapes.length !== 2) return false;
+    
+    get().saveHistory();
+    
+    const [shape1, shape2] = selectedShapes;
+    
+    // Determine connection points
+    // For automatic vertical flow: top/bottom preferred?
+    // Let's stick to standard behavior but without arrowheads
+    
+    // Simplified logic: shape1 (top) -> shape2 (bottom) usually
+    // valid for org charts where hierarchy implies direction
+    
+    const connector: ElbowConnectorShape = {
+      id: createId(),
+      type: 'elbow-connector',
+      x: 0,
+      y: 0,
+      startPoint: { x: 0, y: 0 }, // Will be updated by bindings
+      endPoint: { x: 0, y: 0 },
+      startDirection: 'vertical',
+      startBinding: { shapeId: shape1.id, side: 'bottom' },
+      endBinding: { shapeId: shape2.id, side: 'top' },
+      startArrowhead: 'none',
+      endArrowhead: 'none',
+      fill: 'none',
+      stroke: '#000000',
+      strokeWidth: 1,
+      rotation: 0,
+    };
+    
+    set((state) => {
+      const newShapes = [...state.shapes, connector];
+      // Update connector to snap to bindings immediately
+      const finalShapes = updateAllConnectors(newShapes);
+      return {
+        shapes: finalShapes,
+        selectedIds: new Set([connector.id]),
+      };
+    });
+    
+    return true;
+  },
+  
+  addParent: (shapeId: string) => {
+    get().saveHistory();
+    const { shapes, canvasSize } = get();
+    const currentShape = shapes.find(s => s.id === shapeId) as RectangleShape;
+    if (!currentShape || currentShape.type !== 'rectangle') return;
+    
+    // Create parent box at level - 1
+    const level = (currentShape.level ?? 0) - 1;
+    const parentBox = createRectangle(0, 0, '', level);
+    
+    // Connect Parent (Bottom) to Current (Top)
+    const connector: ElbowConnectorShape = {
+      id: createId(),
+      type: 'elbow-connector',
+      x: 0, 
+      y: 0,
+      startPoint: { x: 0, y: 0 },
+      endPoint: { x: 0, y: 0 },
+      startDirection: 'vertical',
+      startBinding: { shapeId: parentBox.id, side: 'bottom' },
+      endBinding: { shapeId: currentShape.id, side: 'top' },
+      startArrowhead: 'none',
+      endArrowhead: 'none',
+      fill: 'none',
+      stroke: '#000000',
+      strokeWidth: 1,
+      rotation: 0,
+    };
+    
+    set((state) => {
+      const newShapes = [...state.shapes, parentBox, connector];
+      const layouted = layoutShapesByLevel(newShapes, canvasSize.width, canvasSize.height);
+      return {
+        shapes: updateAllConnectors(layouted),
+        selectedIds: new Set([parentBox.id]),
+      };
+    });
+  },
+  
+  addChild: (shapeId: string) => {
+    get().saveHistory();
+    const { shapes, canvasSize } = get();
+    const currentShape = shapes.find(s => s.id === shapeId) as RectangleShape;
+    if (!currentShape || currentShape.type !== 'rectangle') return;
+    
+    // Create child box at level + 1
+    const level = (currentShape.level ?? 0) + 1;
+    const childBox = createRectangle(0, 0, '', level);
+    
+    // Connect Current (Bottom) to Child (Top)
+    const connector: ElbowConnectorShape = {
+      id: createId(),
+      type: 'elbow-connector',
+      x: 0, 
+      y: 0,
+      startPoint: { x: 0, y: 0 },
+      endPoint: { x: 0, y: 0 },
+      startDirection: 'vertical',
+      startBinding: { shapeId: currentShape.id, side: 'bottom' },
+      endBinding: { shapeId: childBox.id, side: 'top' },
+      startArrowhead: 'none',
+      endArrowhead: 'none',
+      fill: 'none',
+      stroke: '#000000',
+      strokeWidth: 1,
+      rotation: 0,
+    };
+    
+    set((state) => {
+      const newShapes = [...state.shapes, childBox, connector];
+      const layouted = layoutShapesByLevel(newShapes, canvasSize.width, canvasSize.height);
+      return {
+        shapes: updateAllConnectors(layouted),
+        selectedIds: new Set([childBox.id]),
       };
     });
   },

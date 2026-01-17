@@ -4,62 +4,55 @@ import {
   ArrowCounterClockwise, 
   ArrowClockwise, 
   Trash,
-  ArrowsLeftRight,
   TreeStructure,
+  ArrowUp,
+  ArrowDown,
 } from '@phosphor-icons/react';
 
 export function Toolbar() {
-  const { shapes, selectedIds, addBoxAtLevel, connectSelectedShapes, clearAll, undo, redo, autoLayout } = useShapeStore();
+  const { shapes, selectedIds, addBoxAtLevel, addParent, addChild, clearAll, undo, redo, autoLayout } = useShapeStore();
   
-  const selectedShapes = shapes.filter(s => selectedIds.has(s.id) && s.type !== 'elbow-connector');
-  const canConnect = selectedShapes.length === 2;
-  
-  // Get max level currently in use
-  const boxes = shapes.filter(s => s.type === 'rectangle') as any[];
-  const maxLevel = boxes.length > 0 ? Math.max(...boxes.map(b => b.level ?? 0)) : -1;
+  const selectedShapes = shapes.filter(s => selectedIds.has(s.id));
+  const selectedShape = selectedShapes.length === 1 ? selectedShapes[0] : null;
+  const isBoxSelected = selectedShape?.type === 'rectangle';
 
   return (
     <div className="absolute top-3 left-1/2 -translate-x-1/2 z-20">
       <div className="flex items-center gap-1 px-2 py-1.5 bg-white rounded-lg shadow-lg border border-gray-200">
-        {/* Add boxes at levels */}
-        <div className="flex items-center gap-0.5">
-          <span className="text-[10px] text-gray-400 px-1">Level</span>
-          {[0, 1, 2, 3, 4].map(level => (
-            <button
-              key={level}
-              onClick={() => addBoxAtLevel(level)}
-              title={`Add box at level ${level}`}
-              className={`flex items-center justify-center w-7 h-7 text-xs font-medium rounded transition-colors ${
-                level <= maxLevel + 1
-                  ? 'text-gray-700 hover:bg-gray-100'
-                  : 'text-gray-300 hover:bg-gray-50'
-              }`}
-            >
-              {level}
-            </button>
-          ))}
+        
+        {/* Contextual Logic: If no box selected, show "Add Root Box". If box selected, show "Add Parent / Add Child" */}
+        
+        {!isBoxSelected ? (
           <button
-            onClick={() => addBoxAtLevel(maxLevel + 1)}
-            title="Add box at next level"
-            className="flex items-center justify-center w-7 h-7 text-gray-500 hover:bg-gray-100 rounded"
+            onClick={() => addBoxAtLevel(0)}
+            title="Add Root Box"
+            className="flex items-center gap-1.5 px-2 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-100 rounded"
           >
-            <Plus size={14} weight="bold" />
+            <Plus size={16} weight="bold" />
+            Add Box
           </button>
-        </div>
+        ) : (
+          <>
+             <button
+              onClick={() => addParent(selectedShape!.id)}
+              title="Add Parent (Level Up)"
+              className="flex items-center gap-1.5 px-2 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-100 rounded"
+            >
+              <ArrowUp size={16} weight="bold" />
+              Add Parent
+            </button>
+            <button
+              onClick={() => addChild(selectedShape!.id)}
+              title="Add Child (Level Down)"
+              className="flex items-center gap-1.5 px-2 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-100 rounded"
+            >
+              <ArrowDown size={16} weight="bold" />
+              Add Child
+            </button>
+          </>
+        )}
 
         <div className="w-px h-6 bg-gray-200 mx-1" />
-
-        {/* Connect */}
-        <button
-          onClick={connectSelectedShapes}
-          disabled={!canConnect}
-          title={canConnect ? "Connect selected shapes" : "Select 2 shapes to connect"}
-          className={`flex items-center justify-center w-8 h-8 rounded transition-colors ${
-            canConnect ? 'bg-gray-800 text-white' : 'text-gray-300 cursor-not-allowed'
-          }`}
-        >
-          <ArrowsLeftRight size={16} weight="regular" />
-        </button>
 
         {/* Re-layout */}
         <button
@@ -91,7 +84,7 @@ export function Toolbar() {
       </div>
       
       <div className="text-center mt-1.5 text-xs text-gray-400">
-        Click level to add box • Double-click to edit • Ctrl+C/V to copy/paste
+        {!isBoxSelected ? "Start by adding a box" : "Select a box to add relatives"} • Double-click to edit
       </div>
     </div>
   );

@@ -17,6 +17,8 @@ export interface BaseShape {
   stroke: string;
   strokeWidth: number;
   rotation: number;
+  // Stacked effect for multiple people/items
+  stacked?: boolean;
 }
 
 export interface RectangleShape extends BaseShape {
@@ -101,6 +103,7 @@ export function createRectangle(x: number, y: number, label = '', level = 0): Re
     labelFontSize: 12,
     labelColor: '#000000',
     level,
+    stacked: false,
   };
 }
 
@@ -116,6 +119,7 @@ export function createEllipse(x: number, y: number): EllipseShape {
     stroke: DEFAULT_STROKE,
     strokeWidth: DEFAULT_STROKE_WIDTH,
     rotation: 0,
+    stacked: false,
   };
 }
 

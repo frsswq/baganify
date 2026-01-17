@@ -150,13 +150,35 @@ export function PropertyPanel() {
       {/* Corner radius */}
       {selectedShape.type === 'rectangle' && (
         <div className="p-3 border-b border-gray-100">
-          <div className="text-xs font-medium text-gray-500 mb-2">Corners</div>
+          <div className="text-xs font-medium text-gray-500 mb-2">Corner Style</div>
           <div className="flex gap-1">
-            {[0, 3, 6].map(r => (
-              <button key={r} onClick={() => updateShape(selectedShape.id, { cornerRadius: r } as Partial<RectangleShape>)} className={`flex-1 py-1 text-xs rounded ${selectedShape.cornerRadius === r ? 'bg-gray-800 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}>
-                {r === 0 ? 'Sharp' : r}
-              </button>
-            ))}
+            <button
+              onClick={() => updateShape(selectedShape.id, { cornerRadius: 0 } as Partial<RectangleShape>)}
+              className={`flex-1 py-1 text-xs rounded ${selectedShape.cornerRadius === 0 ? 'bg-gray-800 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}
+            >
+              Sharp
+            </button>
+            <button
+              onClick={() => updateShape(selectedShape.id, { cornerRadius: 6 } as Partial<RectangleShape>)}
+              className={`flex-1 py-1 text-xs rounded ${selectedShape.cornerRadius > 0 ? 'bg-gray-800 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}
+            >
+              Rounded
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Stacked Toggle */}
+      {(selectedShape.type === 'rectangle' || selectedShape.type === 'ellipse') && (
+        <div className="p-3 border-b border-gray-100">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-medium text-gray-500">Stacked</span>
+            <button
+              onClick={() => updateShape(selectedShape.id, { stacked: !selectedShape.stacked } as any)}
+              className={`w-10 h-5 rounded-full relative transition-colors ${selectedShape.stacked ? 'bg-gray-800' : 'bg-gray-200'}`}
+            >
+              <span className={`absolute top-0.5 w-4 h-4 rounded-full bg-white shadow transition-transform ${selectedShape.stacked ? 'left-[22px]' : 'left-0.5'}`} />
+            </button>
           </div>
         </div>
       )}

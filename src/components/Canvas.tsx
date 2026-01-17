@@ -1,6 +1,6 @@
 import { useRef, useState, useCallback, useEffect } from 'react';
 import { useShapeStore } from '../lib/store/shapes';
-import type { Shape, ElbowConnectorShape, TextShape, ArrowheadType, RectangleShape } from '../lib/shapes/types';
+import type { Shape, ElbowConnectorShape, TextShape, RectangleShape } from '../lib/shapes/types';
 import { boundsIntersect } from '../lib/shapes/types';
 
 interface SelectionRect {
@@ -221,6 +221,18 @@ function ShapeRenderer({ shape, isSelected, isEditing, onClick, onDoubleClick, o
       const cy = shape.y + shape.height / 2;
       return (
         <g onClick={onClick} onDoubleClick={onDoubleClick} style={{ cursor: 'pointer' }}>
+          {shape.stacked && (
+            <rect 
+              x={shape.x + 3} 
+              y={shape.y - 3} 
+              width={shape.width} 
+              height={shape.height} 
+              rx={shape.cornerRadius} 
+              fill={shape.fill} 
+              stroke={shape.stroke} 
+              strokeWidth={shape.strokeWidth} 
+            />
+          )}
           <rect x={shape.x} y={shape.y} width={shape.width} height={shape.height} rx={shape.cornerRadius} fill={shape.fill} stroke={shape.stroke} strokeWidth={shape.strokeWidth} />
           {isEditing ? (
             <foreignObject x={shape.x} y={shape.y} width={shape.width} height={shape.height}>
@@ -265,6 +277,17 @@ function ShapeRenderer({ shape, isSelected, isEditing, onClick, onDoubleClick, o
     case 'ellipse':
       return (
         <g onClick={onClick} style={{ cursor: 'pointer' }}>
+          {shape.stacked && (
+            <ellipse 
+              cx={shape.x + shape.width / 2 + 3} 
+              cy={shape.y + shape.height / 2 - 3} 
+              rx={shape.width / 2} 
+              ry={shape.height / 2} 
+              fill={shape.fill} 
+              stroke={shape.stroke} 
+              strokeWidth={shape.strokeWidth} 
+            />
+          )}
           <ellipse cx={shape.x + shape.width / 2} cy={shape.y + shape.height / 2} rx={shape.width / 2} ry={shape.height / 2} fill={shape.fill} stroke={shape.stroke} strokeWidth={shape.strokeWidth} />
           {renderHandles(shape.x, shape.y, shape.width, shape.height)}
         </g>

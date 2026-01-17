@@ -10,7 +10,7 @@ export function shapeToSVG(shape: Shape): string {
   
   switch (shape.type) {
     case 'rectangle':
-      return `<rect 
+      const rectSvg = `<rect 
         x="${shape.x}" 
         y="${shape.y}" 
         width="${shape.width}" 
@@ -19,9 +19,23 @@ export function shapeToSVG(shape: Shape): string {
         fill="${shape.fill}" 
         stroke="${shape.stroke}" 
         stroke-width="${shape.strokeWidth}"${transform} />`;
+      
+      if (shape.stacked) {
+        return `<rect 
+          x="${shape.x + 3}" 
+          y="${shape.y - 3}" 
+          width="${shape.width}" 
+          height="${shape.height}" 
+          rx="${shape.cornerRadius}"
+          fill="${shape.fill}" 
+          stroke="${shape.stroke}" 
+          stroke-width="${shape.strokeWidth}"${transform} />
+          ${rectSvg}`;
+      }
+      return rectSvg;
     
     case 'ellipse':
-      return `<ellipse 
+      const ellipseSvg = `<ellipse 
         cx="${shape.x + shape.width / 2}" 
         cy="${shape.y + shape.height / 2}" 
         rx="${shape.width / 2}" 
@@ -29,6 +43,19 @@ export function shapeToSVG(shape: Shape): string {
         fill="${shape.fill}" 
         stroke="${shape.stroke}" 
         stroke-width="${shape.strokeWidth}"${transform} />`;
+      
+      if (shape.stacked) {
+        return `<ellipse 
+          cx="${shape.x + shape.width / 2 + 3}" 
+          cy="${shape.y + shape.height / 2 - 3}" 
+          rx="${shape.width / 2}" 
+          ry="${shape.height / 2}" 
+          fill="${shape.fill}" 
+          stroke="${shape.stroke}" 
+          stroke-width="${shape.strokeWidth}"${transform} />
+          ${ellipseSvg}`;
+      }
+      return ellipseSvg;
     
     case 'triangle':
       const points = getTrianglePoints(shape.x, shape.y, shape.width, shape.height);
