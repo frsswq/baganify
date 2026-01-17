@@ -50,7 +50,7 @@ export function PropertyPanel() {
           <div className="text-xs font-medium text-gray-500 mb-2">Fill</div>
           <div className="flex gap-1 flex-wrap">
             {['#ffffff', '#f1f3f5', '#dee2e6', '#868e96', '#212529', '#000000'].map(color => (
-              <ColorButton key={color} color={color} isActive={selectedShape.fill === color} onClick={() => updateShape(selectedShape.id, { fill: color })} />
+              <ColorButton key={color} color={color} isActive={selectedShape.fill === color} onClick={() => updateShape(selectedShape.id, { fill: color })} aria-label={`Fill color ${color}`} />
             ))}
           </div>
         </div>
@@ -62,7 +62,7 @@ export function PropertyPanel() {
           <div className="text-xs font-medium text-gray-500 mb-2">Stroke</div>
           <div className="flex gap-1 flex-wrap">
             {['#000000', '#212529', '#495057', '#868e96', '#1971c2', '#c92a2a'].map(color => (
-              <ColorButton key={color} color={color} isActive={selectedShape.stroke === color} onClick={() => updateShape(selectedShape.id, { stroke: color })} />
+              <ColorButton key={color} color={color} isActive={selectedShape.stroke === color} onClick={() => updateShape(selectedShape.id, { stroke: color })} aria-label={`Stroke color ${color}`} />
             ))}
           </div>
         </div>
@@ -74,7 +74,7 @@ export function PropertyPanel() {
           <div className="text-xs font-medium text-gray-500 mb-2">Text Color</div>
           <div className="flex gap-1 flex-wrap">
             {['#000000', '#212529', '#495057', '#c92a2a', '#1971c2'].map(color => (
-              <ColorButton key={color} color={color} isActive={selectedShape.labelColor === color} onClick={() => updateShape(selectedShape.id, { labelColor: color } as Partial<RectangleShape>)} />
+              <ColorButton key={color} color={color} isActive={selectedShape.labelColor === color} onClick={() => updateShape(selectedShape.id, { labelColor: color } as Partial<RectangleShape>)} aria-label={`Text color ${color}`} />
             ))}
           </div>
         </div>
@@ -175,6 +175,7 @@ export function PropertyPanel() {
             <span className="text-xs font-medium text-gray-500">Stacked</span>
             <button
               onClick={() => updateShape(selectedShape.id, { stacked: !selectedShape.stacked } as any)}
+              aria-label={selectedShape.stacked ? "Disable stacked effect" : "Enable stacked effect"}
               className={`w-10 h-5 rounded-full relative transition-colors ${selectedShape.stacked ? 'bg-gray-800' : 'bg-gray-200'}`}
             >
               <span className={`absolute top-0.5 w-4 h-4 rounded-full bg-white shadow transition-transform ${selectedShape.stacked ? 'left-[22px]' : 'left-0.5'}`} />
@@ -216,10 +217,11 @@ export function PropertyPanel() {
   );
 }
 
-function ColorButton({ color, isActive, onClick }: { color: string; isActive: boolean; onClick: () => void }) {
+function ColorButton({ color, isActive, onClick, ...props }: { color: string; isActive: boolean; onClick: () => void; 'aria-label'?: string }) {
   return (
     <button
       onClick={onClick}
+      aria-label={props['aria-label'] || `Color ${color}`}
       className={`w-6 h-6 rounded border-2 transition-all ${isActive ? 'border-gray-800 ring-1 ring-gray-300' : 'border-gray-200 hover:border-gray-400'}`}
       style={{ backgroundColor: color }}
     />

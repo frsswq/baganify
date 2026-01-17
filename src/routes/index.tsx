@@ -12,7 +12,7 @@ function ShapeBuilder() {
   const hasSelection = selectedIds.size > 0
 
   return (
-    <div className="h-screen w-screen bg-[#f8f9fa] overflow-hidden relative">
+    <div className="relative w-full h-dvh overflow-hidden bg-[#f8f9fa]">
       {/* Top Toolbar - Excalidraw style */}
       <Toolbar />
 

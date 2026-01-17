@@ -1,4 +1,4 @@
-import { useRef, useState, useCallback, useEffect } from 'react';
+import { useRef, useState, useEffect } from 'react';
 import { useShapeStore } from '../lib/store/shapes';
 import type { Shape, ElbowConnectorShape, TextShape, RectangleShape } from '../lib/shapes/types';
 import { boundsIntersect } from '../lib/shapes/types';
@@ -73,7 +73,7 @@ export function Canvas() {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [deleteSelected, clearSelection, editingId, undo, redo, copySelected, pasteClipboard]);
 
-  const getSVGPoint = useCallback((clientX: number, clientY: number) => {
+  const getSVGPoint = (clientX: number, clientY: number) => {
     const svg = svgRef.current;
     if (!svg) return null;
     const pt = svg.createSVGPoint();
@@ -82,16 +82,16 @@ export function Canvas() {
     const ctm = svg.getScreenCTM();
     if (!ctm) return null;
     return pt.matrixTransform(ctm.inverse());
-  }, []);
+  };
 
   // Click to select (no dragging in org chart mode)
-  const handleShapeClick = useCallback((e: React.MouseEvent, shape: Shape) => {
+  const handleShapeClick = (e: React.MouseEvent, shape: Shape) => {
     e.stopPropagation();
     const isMultiSelect = e.shiftKey || e.metaKey || e.ctrlKey;
     selectShape(shape.id, isMultiSelect);
-  }, [selectShape]);
+  };
 
-  const handleCanvasMouseDown = useCallback((e: React.MouseEvent) => {
+  const handleCanvasMouseDown = (e: React.MouseEvent) => {
     const target = e.target as Element;
     if (target.getAttribute?.('data-canvas') === 'true') {
       const svgP = getSVGPoint(e.clientX, e.clientY);
@@ -101,16 +101,16 @@ export function Canvas() {
         clearSelection();
       }
     }
-  }, [getSVGPoint, clearSelection]);
+  };
 
-  const handleMouseMove = useCallback((e: React.MouseEvent) => {
+  const handleMouseMove = (e: React.MouseEvent) => {
     if (!selectionRect) return;
     const svgP = getSVGPoint(e.clientX, e.clientY);
     if (!svgP) return;
     setSelectionRect({ ...selectionRect, currentX: svgP.x, currentY: svgP.y });
-  }, [selectionRect, getSVGPoint]);
+  };
 
-  const handleMouseUp = useCallback(() => {
+  const handleMouseUp = () => {
     if (selectionRect) {
       const rect = {
         x: Math.min(selectionRect.startX, selectionRect.currentX),
@@ -124,26 +124,26 @@ export function Canvas() {
       }
       setSelectionRect(null);
     }
-  }, [selectionRect, shapes, selectShapes]);
+  };
 
-  const handleDoubleClick = useCallback((shape: Shape) => {
+  const handleDoubleClick = (shape: Shape) => {
     if (shape.type === 'rectangle' || shape.type === 'text') {
       setEditingId(shape.id);
     }
-  }, []);
+  };
 
-  const handleLabelChange = useCallback((id: string, label: string) => {
+  const handleLabelChange = (id: string, label: string) => {
     const shape = shapes.find(s => s.id === id);
     if (shape?.type === 'rectangle') {
       updateShape(id, { label } as Partial<RectangleShape>);
     } else if (shape?.type === 'text') {
       updateShape(id, { text: label } as Partial<TextShape>);
     }
-  }, [shapes, updateShape]);
+  };
 
-  const handleEditBlur = useCallback(() => {
+  const handleEditBlur = () => {
     setEditingId(null);
-  }, []);
+  };
 
   return (
     <div ref={containerRef} className="absolute inset-0">

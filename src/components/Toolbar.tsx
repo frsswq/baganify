@@ -55,9 +55,11 @@ export function Toolbar() {
         <div className="w-px h-6 bg-gray-200 mx-1" />
 
         {/* Re-layout */}
+        {/* Re-layout */}
         <button
           onClick={autoLayout}
           title="Re-arrange layout"
+          aria-label="Re-arrange layout"
           className="flex items-center justify-center w-8 h-8 text-gray-500 hover:bg-gray-100 rounded"
         >
           <TreeStructure size={16} weight="regular" />
@@ -66,17 +68,32 @@ export function Toolbar() {
         <div className="w-px h-6 bg-gray-200 mx-1" />
 
         {/* Undo/Redo */}
-        <button onClick={undo} title="Undo (Ctrl+Z)" className="flex items-center justify-center w-8 h-8 text-gray-500 hover:bg-gray-100 rounded">
+        <button 
+          onClick={undo} 
+          title="Undo (Ctrl+Z)" 
+          aria-label="Undo"
+          className="flex items-center justify-center w-8 h-8 text-gray-500 hover:bg-gray-100 rounded"
+        >
           <ArrowCounterClockwise size={16} weight="regular" />
         </button>
-        <button onClick={redo} title="Redo (Ctrl+Shift+Z)" className="flex items-center justify-center w-8 h-8 text-gray-500 hover:bg-gray-100 rounded">
+        <button 
+          onClick={redo} 
+          title="Redo (Ctrl+Shift+Z)" 
+          aria-label="Redo"
+          className="flex items-center justify-center w-8 h-8 text-gray-500 hover:bg-gray-100 rounded"
+        >
           <ArrowClockwise size={16} weight="regular" />
         </button>
 
         {shapes.length > 0 && (
           <>
             <div className="w-px h-6 bg-gray-200 mx-1" />
-            <button onClick={clearAll} title="Clear all" className="flex items-center justify-center w-8 h-8 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded">
+            <button 
+              onClick={clearAll} 
+              title="Clear all" 
+              aria-label="Clear all shapes"
+              className="flex items-center justify-center w-8 h-8 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded"
+            >
               <Trash size={16} weight="regular" />
             </button>
           </>
