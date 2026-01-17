@@ -19,6 +19,8 @@ export interface BaseShape {
   rotation: number;
   // Stacked effect for multiple people/items
   stacked?: boolean;
+  // Layout for org chart children
+  childLayout?: 'horizontal' | 'vertical';
 }
 
 export interface RectangleShape extends BaseShape {

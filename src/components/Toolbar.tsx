@@ -7,20 +7,31 @@ import {
   Trash,
   ArrowUp,
   ArrowDown,
+  List
 } from '@phosphor-icons/react';
 import { Button } from './ui/button';
 import { Separator } from './ui/separator';
+import { LayoutSettings } from './LayoutSettings';
 
 export function Toolbar() {
-  const { shapes, selectedIds, addBoxAtLevel, addParent, addChild, clearAll, undo, redo } = useShapeStore();
+  const { shapes, selectedIds, addBoxAtLevel, addParent, addChild, clearAll, undo, redo, toggleChildLayout } = useShapeStore();
   
   const selectedShapes = shapes.filter(s => selectedIds.has(s.id));
   const selectedShape = selectedShapes.length === 1 ? selectedShapes[0] : null;
+
   const isBoxSelected = selectedShape?.type === 'rectangle' || selectedShape?.type === 'ellipse'; // Allow ellipse too for org chart
 
-  const hasParent = selectedShape ? shapes.some(s => 
+  // Check parent status for constraints
+  const parentConnector = selectedShape ? shapes.find(s => 
     s.type === 'elbow-connector' && s.endBinding?.shapeId === selectedShape.id
-  ) : false;
+  ) as ElbowConnectorShape : null;
+  
+  const parentShape = parentConnector?.startBinding ? shapes.find(s => s.id === parentConnector.startBinding!.shapeId) : null;
+  const hasVerticalParent = parentShape?.childLayout === 'vertical';
+
+  const hasParent = !!parentShape;
+  
+
 
   return (
     <div className="absolute top-3 left-1/2 -translate-x-1/2 z-20">
@@ -43,23 +54,39 @@ export function Toolbar() {
               variant="ghost"
               size="sm"
               onClick={() => addParent(selectedShape!.id)}
-              disabled={hasParent}
-              title={hasParent ? "Shape already has a parent" : "Add Parent (Level Up)"}
-              className={cn("text-xs h-8 px-2 text-gray-700", hasParent && "opacity-50 cursor-not-allowed")}
+              disabled={hasParent || hasVerticalParent}
+              title={hasParent ? "Shape already has a parent" : hasVerticalParent ? "Cannot add parent to stacked item" : "Add Parent (Level Up)"}
+              className={cn("text-xs h-8 px-2 text-gray-700", (hasParent || hasVerticalParent) && "opacity-50 cursor-not-allowed")}
             >
               <ArrowUp size={16} weight="bold" className="mr-1.5" />
               Add Parent
             </Button>
+
             <Button
               variant="ghost"
               size="sm"
               onClick={() => addChild(selectedShape!.id)}
-              title="Add Child (Level Down)"
-              className="text-xs h-8 px-2 text-gray-700"
+              disabled={hasVerticalParent}
+              title={hasVerticalParent ? "Cannot add child to stacked item" : "Add Child (Level Down)"}
+              className={cn("text-xs h-8 px-2 text-gray-700", hasVerticalParent && "opacity-50 cursor-not-allowed")}
             >
               <ArrowDown size={16} weight="bold" className="mr-1.5" />
               Add Child
             </Button>
+            
+            <div className="w-px h-4 bg-gray-200 mx-1" />
+            
+            <Button
+              variant={selectedShape.childLayout === 'vertical' ? 'secondary' : 'ghost'}
+              size="icon"
+              onClick={() => toggleChildLayout(selectedShape!.id)}
+              title="Toggle Vertical Stack Mode"
+              className={cn("h-8 w-8", selectedShape.childLayout === 'vertical' && "bg-gray-100 text-blue-600")}
+            >
+              <List size={16} weight="bold" />
+            </Button>
+
+
           </>
         )}
 
@@ -84,6 +111,9 @@ export function Toolbar() {
         >
           <ArrowClockwise size={16} weight="regular" />
         </Button>
+        
+        <Separator orientation="vertical" className="h-6 mx-1" />
+        <LayoutSettings />
 
         {shapes.length > 0 && (
           <>

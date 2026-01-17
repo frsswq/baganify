@@ -8,14 +8,24 @@ interface HistoryState {
 }
 
 // Layout constants
-const LEVEL_HEIGHT = 90; // Vertical spacing between levels
-const SHAPE_GAP = 40; // Horizontal gap between shapes
+export interface LayoutParams {
+  levelHeight: number;
+  shapeGap: number;
+  verticalIndent: number;
+}
+
+const DEFAULT_LAYOUT_PARAMS: LayoutParams = {
+  levelHeight: 40,
+  shapeGap: 20,
+  verticalIndent: 20,
+};
 
 interface ShapeStore {
   shapes: Shape[];
   selectedIds: Set<string>;
   canvasSize: { width: number; height: number };
   viewport: { x: number; y: number; zoom: number };
+  layoutParams: LayoutParams;
   
   // History
   history: HistoryState[];
@@ -27,6 +37,7 @@ interface ShapeStore {
   // Actions
   setCanvasSize: (width: number, height: number) => void;
   setViewport: (viewport: { x: number; y: number; zoom: number }) => void;
+  setLayoutParams: (params: Partial<LayoutParams>) => void;
   addShape: (shape: Shape) => void;
   addBoxAtLevel: (level: number) => void;
   removeShape: (id: string) => void;
@@ -54,6 +65,7 @@ interface ShapeStore {
   connectSelectedShapes: () => boolean;
   addParent: (shapeId: string) => void;
   addChild: (shapeId: string) => void;
+  toggleChildLayout: (shapeId: string) => void;
   
   getSelectedShapes: () => Shape[];
 }
@@ -65,18 +77,30 @@ export const useShapeStore = create<ShapeStore>((set, get) => ({
   selectedIds: new Set(),
   canvasSize: { width: 1200, height: 800 },
   viewport: { x: 0, y: 0, zoom: 1 },
+  layoutParams: DEFAULT_LAYOUT_PARAMS,
   history: [],
   historyIndex: -1,
   clipboard: [],
   
   setViewport: (viewport) => set({ viewport }),
+  
+  setLayoutParams: (params) => {
+      set((state) => {
+          const newParams = { ...state.layoutParams, ...params };
+          const layouted = layoutShapesByLevel(state.shapes, state.canvasSize.width, state.canvasSize.height, newParams);
+          return {
+              layoutParams: newParams,
+              shapes: updateAllConnectors(layouted)
+          };
+      });
+  },
 
   setCanvasSize: (width, height) => {
     set({ canvasSize: { width, height } });
     // Re-layout with new size
-    const { shapes } = get();
+    const { shapes, layoutParams } = get();
     if (shapes.length > 0) {
-      set({ shapes: layoutShapesByLevel(shapes, width, height) });
+      set({ shapes: layoutShapesByLevel(shapes, width, height, layoutParams) });
     }
   },
   
@@ -128,7 +152,7 @@ export const useShapeStore = create<ShapeStore>((set, get) => ({
     set((state) => {
       const newShapes = [...state.shapes, shape];
       return {
-        shapes: layoutShapesByLevel(newShapes, canvasSize.width, canvasSize.height),
+        shapes: layoutShapesByLevel(newShapes, canvasSize.width, canvasSize.height, state.layoutParams),
         selectedIds: new Set([shape.id]),
       };
     });
@@ -174,7 +198,7 @@ export const useShapeStore = create<ShapeStore>((set, get) => ({
     
     set((state) => {
       const newShapes = [...state.shapes, box, ...connectors];
-      const layouted = layoutShapesByLevel(newShapes, canvasSize.width, canvasSize.height);
+      const layouted = layoutShapesByLevel(newShapes, canvasSize.width, canvasSize.height, state.layoutParams);
       // Update connector positions
       const final = updateAllConnectors(layouted);
       return {
@@ -187,7 +211,7 @@ export const useShapeStore = create<ShapeStore>((set, get) => ({
   autoLayout: () => {
     const { canvasSize } = get();
     set((state) => {
-      const layouted = layoutShapesByLevel(state.shapes, canvasSize.width, canvasSize.height);
+      const layouted = layoutShapesByLevel(state.shapes, canvasSize.width, canvasSize.height, state.layoutParams);
       return { shapes: updateAllConnectors(layouted) };
     });
   },
@@ -298,7 +322,7 @@ export const useShapeStore = create<ShapeStore>((set, get) => ({
     
     set((state) => {
       const allShapes = [...state.shapes, ...newShapes];
-      const layouted = layoutShapesByLevel(allShapes, canvasSize.width, canvasSize.height);
+      const layouted = layoutShapesByLevel(allShapes, canvasSize.width, canvasSize.height, state.layoutParams);
       return {
         shapes: updateAllConnectors(layouted),
         selectedIds: new Set(newShapes.map(s => s.id)),
@@ -396,7 +420,7 @@ export const useShapeStore = create<ShapeStore>((set, get) => ({
     
     set((state) => {
       const newShapes = [...state.shapes, parentBox, connector];
-      const layouted = layoutShapesByLevel(newShapes, canvasSize.width, canvasSize.height);
+      const layouted = layoutShapesByLevel(newShapes, canvasSize.width, canvasSize.height, state.layoutParams);
       return {
         shapes: updateAllConnectors(layouted),
         selectedIds: new Set([parentBox.id]),
@@ -414,7 +438,14 @@ export const useShapeStore = create<ShapeStore>((set, get) => ({
     const level = (currentShape.level ?? 0) + 1;
     const childBox = createRectangle(0, 0, '', level);
     
-    // Connect Current (Bottom) to Child (Top)
+    // Connect Current (Bottom) to Child (Top or Left depending on layout)
+    const isVerticalStack = currentShape.childLayout === 'vertical';
+    const childSide = isVerticalStack ? 'left' : 'top';
+    
+    // Also set startDirection to horizontal if stacking vertical?
+    // Vertical Stack: Parent Bottom -> Child Left. 
+    // Elbow connector handles routing.
+    
     const connector: ElbowConnectorShape = {
       id: createId(),
       type: 'elbow-connector',
@@ -424,7 +455,7 @@ export const useShapeStore = create<ShapeStore>((set, get) => ({
       endPoint: { x: 0, y: 0 },
       startDirection: 'vertical',
       startBinding: { shapeId: currentShape.id, side: 'bottom' },
-      endBinding: { shapeId: childBox.id, side: 'top' },
+      endBinding: { shapeId: childBox.id, side: childSide },
       startArrowhead: 'none',
       endArrowhead: 'none',
       fill: 'none',
@@ -435,7 +466,7 @@ export const useShapeStore = create<ShapeStore>((set, get) => ({
     
     set((state) => {
       const newShapes = [...state.shapes, childBox, connector];
-      const layouted = layoutShapesByLevel(newShapes, canvasSize.width, canvasSize.height);
+      const layouted = layoutShapesByLevel(newShapes, canvasSize.width, canvasSize.height, state.layoutParams);
       return {
         shapes: updateAllConnectors(layouted),
         selectedIds: new Set([childBox.id]),
@@ -443,6 +474,35 @@ export const useShapeStore = create<ShapeStore>((set, get) => ({
     });
   },
   
+  toggleChildLayout: (shapeId: string) => {
+    get().saveHistory();
+    const { shapes, canvasSize } = get();
+    
+    set((state) => {
+      const newLayout = (state.shapes.find(s => s.id === shapeId)?.childLayout || 'horizontal') === 'horizontal' ? 'vertical' : 'horizontal';
+      
+      const newShapes = state.shapes.map(s => {
+        if (s.id === shapeId) {
+          return { ...s, childLayout: newLayout } as Shape;
+        }
+        // Update connectors for children of this shape
+        if (s.type === 'elbow-connector' && s.startBinding?.shapeId === shapeId) {
+             const newSide = newLayout === 'vertical' ? 'left' : 'top';
+             // Also update start arrow if needed? Usually none.
+             // Update endBinding side
+             return {
+                 ...s,
+                 endBinding: { ...s.endBinding!, side: newSide }
+             } as Shape;
+        }
+        return s;
+      });
+      
+      const layouted = layoutShapesByLevel(newShapes, canvasSize.width, canvasSize.height);
+      return { shapes: updateAllConnectors(layouted) };
+    });
+  },
+
   getSelectedShapes: () => {
     const { shapes, selectedIds } = get();
     return shapes.filter((s) => selectedIds.has(s.id));
@@ -450,7 +510,7 @@ export const useShapeStore = create<ShapeStore>((set, get) => ({
 }));
 
 // Tree Layout Algorithm
-function layoutShapesByLevel(shapes: Shape[], canvasWidth: number, canvasHeight: number): Shape[] {
+function layoutShapesByLevel(shapes: Shape[], canvasWidth: number, canvasHeight: number, params: LayoutParams = DEFAULT_LAYOUT_PARAMS): Shape[] {
   const boxes = shapes.filter((s): s is RectangleShape | EllipseShape => s.type === 'rectangle' || s.type === 'ellipse');
   const connectors = shapes.filter((s): s is ElbowConnectorShape => s.type === 'elbow-connector');
   const others = shapes.filter(s => s.type !== 'rectangle' && s.type !== 'ellipse' && s.type !== 'elbow-connector');
@@ -489,11 +549,11 @@ function layoutShapesByLevel(shapes: Shape[], canvasWidth: number, canvasHeight:
   roots.sort((a, b) => a.x - b.x);
 
   const forestData = roots.map(root => {
-    const dim = calculateSubtreeDimensions(root.id, childrenMap, boxes, layoutData);
+    const dim = calculateSubtreeDimensions(root.id, childrenMap, boxes, layoutData, params);
     return { root, dim };
   });
   
-  const totalForestWidth = forestData.reduce((sum, { dim }) => sum + dim.width, 0) + (forestData.length - 1) * SHAPE_GAP;
+  const totalForestWidth = forestData.reduce((sum, { dim }) => sum + dim.width, 0) + (forestData.length - 1) * params.shapeGap;
   const maxForestHeight = Math.max(...forestData.map(f => f.dim.height));
   
   const startX = (canvasWidth - totalForestWidth) / 2;
@@ -506,8 +566,8 @@ function layoutShapesByLevel(shapes: Shape[], canvasWidth: number, canvasHeight:
   const positionedBoxes: (RectangleShape | EllipseShape)[] = [];
   
   forestData.forEach(({ root, dim }) => {
-    layoutTreeRecursive(root.id, currentForestX, startY, dim.width, childrenMap, boxes, layoutData, positionedBoxes, positionedBoxIds);
-    currentForestX += dim.width + SHAPE_GAP;
+    layoutTreeRecursive(root.id, currentForestX, startY, dim.width, childrenMap, boxes, layoutData, positionedBoxes, positionedBoxIds, params);
+    currentForestX += dim.width + params.shapeGap;
   });
   
   // 6. Handle disconnected nodes / cycles that weren't visited
@@ -565,7 +625,8 @@ function calculateSubtreeDimensions(
   nodeId: string, 
   childrenMap: Map<string, string[]>, 
   boxes: (RectangleShape | EllipseShape)[], 
-  layoutData: Map<string, { width: number; height: number; x: number; y: number }>
+  layoutData: Map<string, { width: number; height: number; x: number; y: number }>,
+  params: LayoutParams
 ): { width: number; height: number } {
   const node = boxes.find(b => b.id === nodeId);
   if (!node) return { width: 0, height: 0 };
@@ -578,18 +639,39 @@ function calculateSubtreeDimensions(
     return dim;
   }
   
-  // Recursively calculate children dimensions
-  const childrenDims = childrenIds.map(childId => calculateSubtreeDimensions(childId, childrenMap, boxes, layoutData));
+    // Recursively calculate children dimensions
+  const childrenDims = childrenIds.map(childId => calculateSubtreeDimensions(childId, childrenMap, boxes, layoutData, params));
   
-  const totalChildrenWidth = childrenDims.reduce((sum, d) => sum + d.width, 0) + (childrenDims.length - 1) * SHAPE_GAP;
-  
-  // Subtree width is max of node width and children width
-  const subtreeWidth = Math.max(node.width, totalChildrenWidth);
-  const subtreeHeight = node.height + LEVEL_HEIGHT + Math.max(...childrenDims.map(d => d.height)); // Approx depth
-  
-  layoutData.set(nodeId, { width: subtreeWidth, height: subtreeHeight, x: 0, y: 0 });
-  
-  return { width: subtreeWidth, height: subtreeHeight };
+  if (node.childLayout === 'vertical') {
+      // Vertical Stack Layout
+      // The subtree width will be the node width + indent + max child width
+      // The subtree height will be node height + sum of all children heights + gaps
+      // Actually we need to be careful: the node itself is at top.
+      
+      const maxChildWidth = childrenDims.length > 0 ? Math.max(...childrenDims.map(d => d.width)) : 0;
+      const totalChildrenHeight = childrenDims.reduce((sum, d) => sum + d.height, 0) + (Math.max(0, childrenDims.length - 1) * params.shapeGap);
+      
+      // If we have children, we need space for the indent
+      const subtreeWidth = childrenDims.length > 0 
+          ? Math.max(node.width, params.verticalIndent + maxChildWidth)
+          : node.width;
+
+      const subtreeHeight = node.height + (childrenDims.length > 0 ? params.levelHeight/2 + totalChildrenHeight : 0);
+      
+      layoutData.set(nodeId, { width: subtreeWidth, height: subtreeHeight, x: 0, y: 0 });
+      return { width: subtreeWidth, height: subtreeHeight };
+  } else {
+      // Horizontal Tree Layout (Default)
+      const totalChildrenWidth = childrenDims.reduce((sum, d) => sum + d.width, 0) + (Math.max(0, childrenDims.length - 1) * params.shapeGap);
+      
+      // Subtree width is max of node width and children width
+      const subtreeWidth = Math.max(node.width, totalChildrenWidth);
+      const subtreeHeight = node.height + params.levelHeight + (childrenDims.length > 0 ? Math.max(...childrenDims.map(d => d.height)) : 0);
+      
+      layoutData.set(nodeId, { width: subtreeWidth, height: subtreeHeight, x: 0, y: 0 });
+      
+      return { width: subtreeWidth, height: subtreeHeight };
+  }
 }
 
 function layoutTreeRecursive(
@@ -601,7 +683,8 @@ function layoutTreeRecursive(
   boxes: (RectangleShape | EllipseShape)[],
   layoutData: Map<string, any>,
   result: (RectangleShape | EllipseShape)[],
-  visited: Set<string>
+  visited: Set<string>,
+  params: LayoutParams
 ) {
   if (visited.has(nodeId)) return;
   visited.add(nodeId);
@@ -613,34 +696,62 @@ function layoutTreeRecursive(
   const nodeX = x + (availableWidth - node.width) / 2;
   const nodeY = y;
   
-  result.push({ ...node, x: nodeX, y: nodeY, level: Math.round((nodeY - 40) / LEVEL_HEIGHT) }); // Update level based on Y
+  result.push({ ...node, x: nodeX, y: nodeY, level: Math.round((nodeY - 40) / params.levelHeight) }); // Update level based on Y
   
   // Layout Children
   const childrenIds = childrenMap.get(nodeId) || [];
   if (childrenIds.length === 0) return;
   
-  // Calculate starting X for children block to center it under parent
-  // Actually, we allocated 'availableWidth' which matches the subtree width.
-  // We just fill it left-to-right.
-  
-  let currentChildX = x;
-  // If children width < availableWidth (parent is wider), we need to center the children block?
-  // Our subtree width calc was Max(Parent, Children).
-  // If Parent > Children, availableWidth = ParentWidth. Children block width < ParentWidth.
-  // So we center the children block.
-  
   const childrenDims = childrenIds.map(id => layoutData.get(id));
-  const totalChildrenWidth = childrenDims.reduce((sum, d) => sum + d.width, 0) + (childrenDims.length - 1) * SHAPE_GAP;
   
-  if (totalChildrenWidth < availableWidth) {
-    currentChildX += (availableWidth - totalChildrenWidth) / 2;
+  if (node.childLayout === 'vertical') {
+      // Vertical Stack
+      // Parent is centered in available width (x + availableWidth/2 - node.width/2) -> nodeX
+      // But for vertical stack, we want children to be indented relative to parent Center or parent Left?
+      // Usually org chart vertical list:
+      //     [ Parent ]
+      //         |
+      //         +-- [ Child 1 ]
+      //         |
+      //         +-- [ Child 2 ]
+      
+      // So children start at nodeX + node.width/2 + INDENT?
+      // Wait, nodeX is the left edge of the parent.
+      // Parent center is nodeX + node.width/2.
+      // We want the connector to go down from center, then right.
+      
+      const parentCenterX = nodeX + node.width / 2;
+      const childStartX = parentCenterX + params.verticalIndent; 
+      
+      // Start slightly lower
+      let currentChildY = y + node.height + params.levelHeight/2; 
+      
+      childrenIds.forEach((childId, index) => {
+        const dim = childrenDims[index];
+        
+        // Pass dim.width as available width so the child just takes what it needs
+        // and doesn't try to center itself in a huge area.
+        layoutTreeRecursive(childId, childStartX, currentChildY, dim.width, childrenMap, boxes, layoutData, result, visited, params);
+        
+        currentChildY += dim.height + params.shapeGap;
+      });
+      
+  } else {
+      // Horizontal Tree
+      let currentChildX = x;
+
+      const totalChildrenWidth = childrenDims.reduce((sum, d) => sum + d.width, 0) + (Math.max(0, childrenDims.length - 1) * params.shapeGap);
+      
+      if (totalChildrenWidth < availableWidth) {
+        currentChildX += (availableWidth - totalChildrenWidth) / 2;
+      }
+      
+      childrenIds.forEach((childId, index) => {
+        const dim = childrenDims[index];
+        layoutTreeRecursive(childId, currentChildX, y + params.levelHeight + node.height, dim.width, childrenMap, boxes, layoutData, result, visited, params);
+        currentChildX += dim.width + params.shapeGap;
+      });
   }
-  
-  childrenIds.forEach((childId, index) => {
-    const dim = childrenDims[index];
-    layoutTreeRecursive(childId, currentChildX, y + LEVEL_HEIGHT, dim.width, childrenMap, boxes, layoutData, result, visited);
-    currentChildX += dim.width + SHAPE_GAP;
-  });
 }
 
 // Update all connector positions based on their bindings
@@ -652,11 +763,18 @@ function updateAllConnectors(shapes: Shape[]): Shape[] {
     
     let startPoint = shape.startPoint;
     let endPoint = shape.endPoint;
+    let startDirection = shape.startDirection;
     
     if (shape.startBinding) {
       const boundShape = shapeMap.get(shape.startBinding.shapeId);
       if (boundShape) {
         startPoint = getShapeConnectionPoint(boundShape, shape.startBinding.side);
+        // Auto-set direction based on binding side
+        if (shape.startBinding.side === 'top' || shape.startBinding.side === 'bottom') {
+            startDirection = 'vertical';
+        } else {
+            startDirection = 'horizontal';
+        }
       }
     }
     
@@ -667,10 +785,20 @@ function updateAllConnectors(shapes: Shape[]): Shape[] {
       }
     }
     
+    // Fallback if no start binding but we want smart defaults?
+    // If just points:
+    if (!shape.startBinding) {
+        const dx = Math.abs(endPoint.x - startPoint.x);
+        const dy = Math.abs(endPoint.y - startPoint.y);
+        // Prefer vertical if moving mostly up/down
+        startDirection = dy > dx ? 'vertical' : 'horizontal';
+    }
+    
     return {
       ...shape,
       startPoint,
       endPoint,
+      startDirection,
       x: Math.min(startPoint.x, endPoint.x),
       y: Math.min(startPoint.y, endPoint.y),
     };
