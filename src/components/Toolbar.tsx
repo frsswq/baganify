@@ -4,13 +4,14 @@ import {
   ArrowCounterClockwise, 
   ArrowClockwise, 
   Trash,
-  TreeStructure,
   ArrowUp,
   ArrowDown,
 } from '@phosphor-icons/react';
+import { Button } from './ui/button';
+import { Separator } from './ui/separator';
 
 export function Toolbar() {
-  const { shapes, selectedIds, addBoxAtLevel, addParent, addChild, clearAll, undo, redo, autoLayout } = useShapeStore();
+  const { shapes, selectedIds, addBoxAtLevel, addParent, addChild, clearAll, undo, redo } = useShapeStore();
   
   const selectedShapes = shapes.filter(s => selectedIds.has(s.id));
   const selectedShape = selectedShapes.length === 1 ? selectedShapes[0] : null;
@@ -18,84 +19,78 @@ export function Toolbar() {
 
   return (
     <div className="absolute top-3 left-1/2 -translate-x-1/2 z-20">
-      <div className="flex items-center gap-1 px-2 py-1.5 bg-white rounded-lg shadow-lg border border-gray-200">
-        
-        {/* Contextual Logic: If no box selected, show "Add Root Box". If box selected, show "Add Parent / Add Child" */}
+      <div className="flex items-center gap-1 px-1 py-1 bg-white rounded-lg shadow-lg border border-gray-200">
         
         {!isBoxSelected ? (
-          <button
+          <Button
+            variant="ghost"
+            size="sm"
             onClick={() => addBoxAtLevel(0)}
             title="Add Root Box"
-            className="flex items-center gap-1.5 px-2 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-100 rounded"
+            className="text-xs h-8 px-2 text-gray-700"
           >
-            <Plus size={16} weight="bold" />
+            <Plus size={16} weight="bold" className="mr-1.5" />
             Add Box
-          </button>
+          </Button>
         ) : (
           <>
-             <button
+             <Button
+              variant="ghost"
+              size="sm"
               onClick={() => addParent(selectedShape!.id)}
               title="Add Parent (Level Up)"
-              className="flex items-center gap-1.5 px-2 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-100 rounded"
+              className="text-xs h-8 px-2 text-gray-700"
             >
-              <ArrowUp size={16} weight="bold" />
+              <ArrowUp size={16} weight="bold" className="mr-1.5" />
               Add Parent
-            </button>
-            <button
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
               onClick={() => addChild(selectedShape!.id)}
               title="Add Child (Level Down)"
-              className="flex items-center gap-1.5 px-2 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-100 rounded"
+              className="text-xs h-8 px-2 text-gray-700"
             >
-              <ArrowDown size={16} weight="bold" />
+              <ArrowDown size={16} weight="bold" className="mr-1.5" />
               Add Child
-            </button>
+            </Button>
           </>
         )}
 
-        <div className="w-px h-6 bg-gray-200 mx-1" />
 
-        {/* Re-layout */}
-        {/* Re-layout */}
-        <button
-          onClick={autoLayout}
-          title="Re-arrange layout"
-          aria-label="Re-arrange layout"
-          className="flex items-center justify-center w-8 h-8 text-gray-500 hover:bg-gray-100 rounded"
-        >
-          <TreeStructure size={16} weight="regular" />
-        </button>
-
-        <div className="w-px h-6 bg-gray-200 mx-1" />
 
         {/* Undo/Redo */}
-        <button 
+        <Button 
+          variant="ghost" 
+          size="icon-sm"
           onClick={undo} 
-          title="Undo (Ctrl+Z)" 
-          aria-label="Undo"
-          className="flex items-center justify-center w-8 h-8 text-gray-500 hover:bg-gray-100 rounded"
+          title="Undo (Ctrl+Z)"
+          className="text-gray-500"
         >
           <ArrowCounterClockwise size={16} weight="regular" />
-        </button>
-        <button 
+        </Button>
+        <Button 
+          variant="ghost" 
+          size="icon-sm"
           onClick={redo} 
-          title="Redo (Ctrl+Shift+Z)" 
-          aria-label="Redo"
-          className="flex items-center justify-center w-8 h-8 text-gray-500 hover:bg-gray-100 rounded"
+          title="Redo (Ctrl+Shift+Z)"
+          className="text-gray-500"
         >
           <ArrowClockwise size={16} weight="regular" />
-        </button>
+        </Button>
 
         {shapes.length > 0 && (
           <>
-            <div className="w-px h-6 bg-gray-200 mx-1" />
-            <button 
+            <Separator orientation="vertical" className="h-6 mx-1" />
+            <Button 
+              variant="ghost" 
+              size="icon-sm"
               onClick={clearAll} 
-              title="Clear all" 
-              aria-label="Clear all shapes"
-              className="flex items-center justify-center w-8 h-8 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded"
+              title="Clear all"
+              className="text-gray-400 hover:text-red-600 hover:bg-red-50"
             >
               <Trash size={16} weight="regular" />
-            </button>
+            </Button>
           </>
         )}
       </div>

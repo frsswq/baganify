@@ -1,5 +1,12 @@
 import { useShapeStore } from '../lib/store/shapes';
 import type { RectangleShape, ArrowheadType } from '../lib/shapes/types';
+import { ColorPicker } from './ColorPicker';
+import { Button } from './ui/button';
+import { Input } from './ui/input';
+import { Separator } from './ui/separator';
+import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
+import { cn } from '@/lib/utils';
+import { TextT, Square, Circle, SquaresFour } from '@phosphor-icons/react';
 
 export function PropertyPanel() {
   const { shapes, selectedIds, updateShape, updateShapes, removeShape } = useShapeStore();
@@ -12,11 +19,10 @@ export function PropertyPanel() {
 
   // Common properties check
   const allRectOrEllipse = selectedShapes.every(s => s.type === 'rectangle' || s.type === 'ellipse');
-  const anyRectOrEllipse = selectedShapes.some(s => s.type === 'rectangle' || s.type === 'ellipse');
   // Connectors usually don't have fill (it's 'none'), so fill is for shapes/text
   const showFill = selectedShapes.some(s => s.type !== 'elbow-connector');
   const showStroke = selectedShapes.some(s => s.type !== 'text'); 
-  const showTextStyles = anyRectOrEllipse || selectedShapes.some(s => s.type === 'text');
+  const showTextStyles = allRectOrEllipse || selectedShapes.some(s => s.type === 'text');
   const showConnectors = selectedShapes.every(s => s.type === 'elbow-connector');
   
   // Handlers for batch updates
@@ -25,273 +31,286 @@ export function PropertyPanel() {
   };
 
   return (
-    <div className="bg-white rounded-lg shadow-lg border border-gray-200 w-52">
+    <div className="bg-white rounded-xl shadow-xl border border-gray-200 w-64 flex flex-col overflow-hidden">
       {/* Selection Count Header */}
-      {isMulti && (
-        <div className="p-3 border-b border-gray-100 bg-gray-50 rounded-t-lg">
-          <div className="flex items-center gap-2 text-sm text-gray-600">
-            <span className="inline-flex items-center justify-center w-5 h-5 bg-gray-800 text-white text-xs font-medium rounded">
-              {selectedShapes.length}
+      <div className="px-4 py-3 border-b border-gray-100 bg-gray-50/50 flex items-center justify-between">
+         <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Properties</span>
+         {isMulti && (
+            <span className="text-xs bg-gray-200 px-2 py-0.5 rounded-full font-medium text-gray-600">
+              {selectedShapes.length} selected
             </span>
-            <span className="text-xs">shapes selected</span>
+         )}
+      </div>
+
+      <div className="px-4 py-4 space-y-6 overflow-y-auto max-h-[80vh]">
+        {/* Shape Type Switcher */}
+        {allRectOrEllipse && (
+          <div className="space-y-2">
+            <label className="text-xs font-medium text-gray-500">Shape</label>
+            <div className="flex bg-gray-100 p-1 rounded-lg">
+              <Button
+                variant={selectedShapes.every(s => s.type === 'rectangle') ? 'default' : 'ghost'}
+                size="sm"
+                className="flex-1 h-7 text-xs"
+                onClick={() => handleBatchUpdate({ type: 'rectangle', cornerRadius: 0 })}
+              >
+                <Square size={16} className="mr-1.5" /> Box
+              </Button>
+              <Button
+                variant={selectedShapes.every(s => s.type === 'ellipse') ? 'default' : 'ghost'}
+                size="sm"
+                className="flex-1 h-7 text-xs"
+                onClick={() => handleBatchUpdate({ type: 'ellipse' })}
+              >
+                <Circle size={16} className="mr-1.5" /> Ellipse
+              </Button>
+            </div>
           </div>
-        </div>
-      )}
+        )}
 
-      {/* Shape Type Switcher (only if all are convertible) */}
-      {allRectOrEllipse && (
-        <div className="p-3 border-b border-gray-100">
-          <div className="text-xs font-medium text-gray-500 mb-2">Shape</div>
-          <div className="flex gap-1">
-            <button
-              onClick={() => handleBatchUpdate({ type: 'rectangle', cornerRadius: 0 })}
-              className={`flex-1 py-1 text-xs rounded ${selectedShapes.every(s => s.type === 'rectangle') ? 'bg-gray-800 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}
-            >
-              Box
-            </button>
-            <button
-              onClick={() => handleBatchUpdate({ type: 'ellipse' })}
-              className={`flex-1 py-1 text-xs rounded ${selectedShapes.every(s => s.type === 'ellipse') ? 'bg-gray-800 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}
-            >
-              Ellipse
-            </button>
+        {/* Label Text (Single Only) */}
+        {!isMulti && (firstShape.type === 'rectangle' || firstShape.type === 'ellipse') && (
+          <div className="space-y-2">
+            <label className="text-xs font-medium text-gray-500">Label</label>
+            <textarea
+              value={firstShape.label}
+              onChange={(e) => updateShape(firstShape.id, { label: e.target.value } as any)}
+              placeholder="Enter label..."
+              rows={2}
+              className="flex w-full rounded-md border border-gray-200 bg-transparent px-3 py-2 text-sm shadow-sm placeholder:text-gray-400 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-gray-950 disabled:cursor-not-allowed disabled:opacity-50 resize-none"
+            />
           </div>
-        </div>
-      )}
+        )}
 
-      {/* Label Text (Single Only) */}
-      {!isMulti && (firstShape.type === 'rectangle' || firstShape.type === 'ellipse') && (
-        <div className="p-3 border-b border-gray-100">
-          <div className="text-xs font-medium text-gray-500 mb-2">Label</div>
-          <textarea
-            value={firstShape.label}
-            onChange={(e) => updateShape(firstShape.id, { label: e.target.value } as any)}
-            placeholder="Double-click box to edit"
-            rows={2}
-            className="w-full px-2 py-1 text-sm border border-gray-200 rounded resize-none focus:outline-none focus:border-gray-400"
-          />
-        </div>
-      )}
+        {/* Appearance Group */}
+        {(showFill || showStroke || showTextStyles) && (
+          <div className="space-y-4">
+             <div className="text-xs font-semibold text-gray-900">Appearance</div>
+             
+             {showFill && (
+                   <ColorPicker 
+                     label="Fill Color" 
+                     color={!isMulti ? firstShape.fill : '#ffffff'} 
+                     onChange={(c) => handleBatchUpdate({ fill: c })} 
+                     type="fill"
+                   />
+             )}
+             
+             {showStroke && (
+               <div className="flex gap-2">
+                 <div className="flex-1">
+                    <ColorPicker 
+                      label="Stroke" 
+                      color={!isMulti ? firstShape.stroke : '#000000'} 
+                      onChange={(c) => handleBatchUpdate({ stroke: c })} 
+                      type="stroke"
+                    />
+                 </div>
+                 <div className="w-[88px]">
+                   {/* Compact Stroke Width */}
+                   <Popover>
+                      <PopoverTrigger render={
+                        <Button variant="outline" size="sm" className="w-full text-xs px-2">
+                           Width: {!isMulti ? Math.floor(firstShape.strokeWidth) : '-'}
+                        </Button>
+                      } />
+                      <PopoverContent className="w-32 p-1" sideOffset={4}>
+                        <div className="grid grid-cols-1 gap-1">
+                          {[1.25, 2.25, 3.25, 4.25].map(w => (
+                             <Button 
+                               key={w} 
+                               variant="ghost" 
+                               size="sm" 
+                               className={cn("justify-start", !isMulti && firstShape.strokeWidth === w && "bg-gray-100")}
+                               onClick={() => handleBatchUpdate({ strokeWidth: w })}
+                             >
+                               <div className="w-8 mr-2 bg-black" style={{ height: Math.floor(w) }} />
+                               {Math.floor(w)}px
+                             </Button>
+                          ))}
+                        </div>
+                      </PopoverContent>
+                   </Popover>
+                 </div>
+               </div>
+             )}
 
-      {/* Label Font Size (Batch) */}
-      {showTextStyles && (
-        <div className="p-3 border-b border-gray-100">
-           <div className="text-xs font-medium text-gray-500 mb-2">
-             {!isMulti && firstShape.type === 'text' ? 'Size' : 'Text Size'}
+             {showTextStyles && (
+                <div className="flex gap-2">
+                  <div className="flex-1">
+                     <ColorPicker 
+                        label="Text" 
+                        color={!isMulti ? (firstShape.labelColor || firstShape.fill) : '#000000'} 
+                        onChange={(c) => handleBatchUpdate({ labelColor: c, ...(firstShape.type === 'text' ? { fill: c } : {}) })} 
+                        type="text"
+                     />
+                  </div>
+                   <div className="w-[88px]">
+                      <Popover>
+                        <PopoverTrigger render={
+                          <Button variant="outline" size="sm" className="w-full text-xs px-2">
+                            <TextT size={16} className="mr-1.5" />
+                            {!isMulti ? (firstShape.labelFontSize || firstShape.fontSize) : '-'}
+                          </Button>
+                        } />
+                        <PopoverContent className="w-48 p-2">
+                          <div className="grid grid-cols-4 gap-1">
+                            {[10, 11, 12, 14, 16, 18, 20, 24].map(size => (
+                              <Button 
+                                key={size} 
+                                variant={(!isMulti && (firstShape.labelFontSize === size || firstShape.fontSize === size)) ? 'default' : 'ghost'} 
+                                size="sm" 
+                                className="h-7 text-xs px-0"
+                                onClick={() => handleBatchUpdate({ labelFontSize: size, fontSize: size })}
+                              >
+                                {size}
+                              </Button>
+                            ))}
+                          </div>
+                        </PopoverContent>
+                      </Popover>
+                   </div>
+                </div>
+             )}
+          </div>
+        )}
+        
+        <Separator />
+
+        {/* Layout / Dimensions Group */}
+        {(!isMulti && (firstShape.type === 'rectangle' || firstShape.type === 'ellipse')) && (
+           <div className="space-y-4">
+              <div className="text-xs font-semibold text-gray-900">Dimensions</div>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1.5">
+                   <label className="text-[10px] text-gray-500 uppercase font-medium">Width</label>
+                   <div className="relative">
+                      <Input 
+                        type="number" 
+                        className="h-8 pl-2 pr-6" 
+                        value={firstShape.width}
+                        onChange={(e) => updateShape(firstShape.id, { width: parseInt(e.target.value) || 50 })}
+                      />
+                      <span className="absolute right-2 top-2 text-[10px] text-gray-400">px</span>
+                   </div>
+                </div>
+                <div className="space-y-1.5">
+                   <label className="text-[10px] text-gray-500 uppercase font-medium">Height</label>
+                   <div className="relative">
+                      <Input 
+                        type="number" 
+                        className="h-8 pl-2 pr-6" 
+                        value={firstShape.height}
+                        onChange={(e) => updateShape(firstShape.id, { height: parseInt(e.target.value) || 30 })}
+                      />
+                      <span className="absolute right-2 top-2 text-[10px] text-gray-400">px</span>
+                   </div>
+                </div>
+              </div>
+
+               {/* Corner Radius (Boxes) */}
+               {firstShape.type === 'rectangle' && (
+                 <div className="space-y-2 pt-2">
+                    <label className="text-xs font-medium text-gray-500">Corner Style</label>
+                    <div className="flex bg-gray-100 p-1 rounded-lg">
+                      <Button 
+                        variant={firstShape.cornerRadius === 0 ? 'default' : 'ghost'}
+                        size="sm"
+                        className="flex-1 h-7 text-xs"
+                        onClick={() => updateShape(firstShape.id, { cornerRadius: 0 } as Partial<RectangleShape>)}
+                      >
+                        Sharp
+                      </Button>
+                      <Button 
+                        variant={firstShape.cornerRadius > 0 ? 'default' : 'ghost'}
+                        size="sm"
+                        className="flex-1 h-7 text-xs"
+                        onClick={() => updateShape(firstShape.id, { cornerRadius: 6 } as Partial<RectangleShape>)}
+                      >
+                        Rounded
+                      </Button>
+                    </div>
+                 </div>
+               )}
            </div>
-           <div className="flex gap-1">
-            {[10, 12, 14, 16].map(size => (
-              <button 
-                key={size} 
-                onClick={() => handleBatchUpdate({ labelFontSize: size, fontSize: size })} 
-                className={`flex-1 py-1 text-xs rounded ${!isMulti && (firstShape.labelFontSize === size || firstShape.fontSize === size) ? 'bg-gray-800 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}
+        )}
+
+        {/* Connector Routes */}
+        {showConnectors && (
+           <div className="space-y-4">
+             <div className="text-xs font-semibold text-gray-900">Connector</div>
+             <div className="flex bg-gray-100 p-1 rounded-lg">
+                <Button 
+                  variant={selectedShapes.every(s => s.startDirection === 'horizontal') ? 'default' : 'ghost'}
+                  size="sm"
+                  className="flex-1 h-7 text-xs"
+                  onClick={() => handleBatchUpdate({ startDirection: 'horizontal' })}
+                >
+                  Horz → Vert
+                </Button>
+                <Button 
+                  variant={selectedShapes.every(s => s.startDirection === 'vertical') ? 'default' : 'ghost'}
+                  size="sm"
+                  className="flex-1 h-7 text-xs"
+                  onClick={() => handleBatchUpdate({ startDirection: 'vertical' })}
+                >
+                  Vert → Horz
+                </Button>
+             </div>
+             
+             <div className="grid grid-cols-2 gap-2">
+                <div className="space-y-1">
+                   <label className="text-[10px] text-gray-500">Start</label>
+                   <ArrowheadSelector 
+                      value={isMulti ? 'none' : firstShape.startArrowhead}
+                      onChange={(v) => handleBatchUpdate({ startArrowhead: v })}
+                    />
+                </div>
+                <div className="space-y-1">
+                   <label className="text-[10px] text-gray-500">End</label>
+                   <ArrowheadSelector 
+                      value={isMulti ? 'none' : firstShape.endArrowhead}
+                      onChange={(v) => handleBatchUpdate({ endArrowhead: v })}
+                    />
+                </div>
+             </div>
+           </div>
+        )}
+
+        <Separator />
+        
+        {/* Stacked Toggle */}
+        {allRectOrEllipse && (
+           <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <SquaresFour size={16} className="text-gray-500" />
+                <span className="text-sm font-medium text-gray-700">Stacked</span>
+              </div>
+              <Button
+                  variant={selectedShapes.every(s => s.stacked) ? 'default' : 'outline'}
+                  size="sm"
+                  className={cn("h-6 w-12 rounded-full", selectedShapes.every(s => s.stacked) ? "bg-blue-600 hover:bg-blue-700" : "bg-gray-200 border-transparent text-transparent hover:bg-gray-300")}
+                  onClick={() => {
+                        const allStacked = selectedShapes.every(s => s.stacked);
+                        handleBatchUpdate({ stacked: !allStacked });
+                  }}
               >
-                {size}
-              </button>
-            ))}
-          </div>
-        </div>
-      )}
+                  <span className={cn("inline-block w-4 h-4 bg-white rounded-full shadow transform transition-transform duration-200", selectedShapes.every(s => s.stacked) ? "translate-x-3" : "-translate-x-3")} />
+              </Button>
+           </div>
+        )}
 
-      {/* Fill (Batch) */}
-      {showFill && (
-        <div className="p-3 border-b border-gray-100">
-          <div className="text-xs font-medium text-gray-500 mb-2">Fill</div>
-          <div className="flex gap-1 flex-wrap">
-            {['#ffffff', '#f1f3f5', '#dee2e6', '#868e96', '#212529', '#000000'].map(color => (
-              <ColorButton 
-                key={color} 
-                color={color} 
-                isActive={!isMulti && firstShape.fill === color} 
-                onClick={() => handleBatchUpdate({ fill: color })} 
-                aria-label={`Fill color ${color}`} 
-              />
-            ))}
-          </div>
-        </div>
-      )}
+        {/* Delete */}
+        <Button 
+          variant="destructive" 
+          className="w-full"
+          onClick={() => selectedShapes.forEach(s => removeShape(s.id))}
+        >
+           Delete {isMulti ? `(${selectedShapes.length})` : 'Shape'}
+        </Button>
 
-      {/* Stroke (Batch) */}
-      {showStroke && (
-        <div className="p-3 border-b border-gray-100">
-          <div className="text-xs font-medium text-gray-500 mb-2">Stroke</div>
-          <div className="flex gap-1 flex-wrap">
-            {['#000000', '#212529', '#495057', '#868e96', '#1971c2', '#c92a2a'].map(color => (
-              <ColorButton 
-                key={color} 
-                color={color} 
-                isActive={!isMulti && firstShape.stroke === color} 
-                onClick={() => handleBatchUpdate({ stroke: color })} 
-                aria-label={`Stroke color ${color}`} 
-              />
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* Text Color (Batch) */}
-      {showTextStyles && (
-        <div className="p-3 border-b border-gray-100">
-          <div className="text-xs font-medium text-gray-500 mb-2">Text Color</div>
-          <div className="flex gap-1 flex-wrap">
-            {['#000000', '#212529', '#495057', '#c92a2a', '#1971c2'].map(color => (
-              <ColorButton 
-                key={color} 
-                color={color} 
-                isActive={!isMulti && (firstShape.labelColor === color || firstShape.fill === color && firstShape.type === 'text')} 
-                // For text shapes, fill is the text color. For rects, labelColor is text color.
-                onClick={() => handleBatchUpdate({ labelColor: color, fill: color })} 
-                aria-label={`Text color ${color}`} 
-              />
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* Stroke Width (Batch) */}
-      {showStroke && (
-        <div className="p-3 border-b border-gray-100">
-          <div className="text-xs font-medium text-gray-500 mb-2">Stroke Width</div>
-           <div className="flex gap-1">
-            {[1.25, 2.25, 3.25].map(w => (
-              <button 
-                key={w} 
-                onClick={() => handleBatchUpdate({ strokeWidth: w })} 
-                className={`flex-1 py-1 text-xs rounded ${!isMulti && firstShape.strokeWidth === w ? 'bg-gray-800 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}
-              >
-                {Math.floor(w)}px
-              </button>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* Size (Single Only - Rect/Ellipse) */}
-      {!isMulti && (firstShape.type === 'rectangle' || firstShape.type === 'ellipse') && (
-        <div className="p-3 border-b border-gray-100">
-          <div className="text-xs font-medium text-gray-500 mb-2">Size</div>
-          <div className="flex gap-2">
-            <div className="flex-1">
-              <input
-                type="number"
-                value={firstShape.width}
-                onChange={(e) => updateShape(firstShape.id, { width: parseInt(e.target.value) || 50 })}
-                className="w-full px-2 py-1 text-xs border border-gray-200 rounded text-center"
-              />
-              <div className="text-[10px] text-gray-400 text-center mt-0.5">W</div>
-            </div>
-            <div className="flex-1">
-              <input
-                type="number"
-                value={firstShape.height}
-                onChange={(e) => updateShape(firstShape.id, { height: parseInt(e.target.value) || 30 })}
-                className="w-full px-2 py-1 text-xs border border-gray-200 rounded text-center"
-              />
-              <div className="text-[10px] text-gray-400 text-center mt-0.5">H</div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Corner radius (Single Only - Rect) */}
-      {(!isMulti && firstShape.type === 'rectangle') && (
-        <div className="p-3 border-b border-gray-100">
-          <div className="text-xs font-medium text-gray-500 mb-2">Corner Style</div>
-          <div className="flex gap-1">
-            <button
-              onClick={() => updateShape(firstShape.id, { cornerRadius: 0 } as Partial<RectangleShape>)}
-              className={`flex-1 py-1 text-xs rounded ${firstShape.cornerRadius === 0 ? 'bg-gray-800 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}
-            >
-              Sharp
-            </button>
-            <button
-              onClick={() => updateShape(firstShape.id, { cornerRadius: 6 } as Partial<RectangleShape>)}
-              className={`flex-1 py-1 text-xs rounded ${firstShape.cornerRadius > 0 ? 'bg-gray-800 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}
-            >
-              Rounded
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* Stacked Toggle (Batch - Rect/Ellipse) */}
-      {anyRectOrEllipse && (
-        <div className="p-3 border-b border-gray-100">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-medium text-gray-500">Stacked</span>
-            <button
-              // If mixed, clicking sets to true. If all true, sets to false.
-              onClick={() => {
-                    const allStacked = selectedShapes.every(s => s.stacked);
-                    const newValue = allStacked ? false : true;
-                handleBatchUpdate({ stacked: newValue });
-              }}
-              aria-label="Toggle stacked effect"
-              className={`w-10 h-5 rounded-full relative transition-colors ${selectedShapes.every(s => s.stacked) ? 'bg-gray-800' : 'bg-gray-200'}`}
-            >
-              <span className={`absolute top-0.5 w-4 h-4 rounded-full bg-white shadow transition-transform ${selectedShapes.every(s => s.stacked) ? 'left-[22px]' : 'left-0.5'}`} />
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* Connector options (Batch if all are connectors) */}
-      {showConnectors && (
-        <>
-          <div className="p-3 border-b border-gray-100">
-            <div className="text-xs font-medium text-gray-500 mb-2">Route</div>
-            <div className="flex gap-1">
-              <button 
-                onClick={() => handleBatchUpdate({ startDirection: 'horizontal' })} 
-                className={`flex-1 py-1.5 text-xs rounded ${selectedShapes.every(s => s.startDirection === 'horizontal') ? 'bg-gray-800 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}
-              >
-                H→V
-              </button>
-              <button 
-                onClick={() => handleBatchUpdate({ startDirection: 'vertical' })} 
-                className={`flex-1 py-1.5 text-xs rounded ${selectedShapes.every(s => s.startDirection === 'vertical') ? 'bg-gray-800 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}
-              >
-                V→H
-              </button>
-            </div>
-          </div>
-
-          <div className="p-3 border-b border-gray-100">
-            <div className="text-xs font-medium text-gray-500 mb-2">Start</div>
-            <ArrowheadSelector 
-                value={isMulti ? 'none' : firstShape.startArrowhead} // Todo handle mixed state better?
-                onChange={(v) => handleBatchUpdate({ startArrowhead: v })} 
-            />
-          </div>
-
-          <div className="p-3 border-b border-gray-100">
-            <div className="text-xs font-medium text-gray-500 mb-2">End</div>
-            <ArrowheadSelector 
-                value={isMulti ? 'none' : firstShape.endArrowhead}
-                onChange={(v) => handleBatchUpdate({ endArrowhead: v })} 
-            />
-          </div>
-        </>
-      )}
-
-      {/* Delete (Batch) */}
-      <div className="p-3">
-        <button onClick={() => selectedShapes.forEach(s => removeShape(s.id))} className="w-full py-1.5 text-xs text-gray-500 hover:text-red-600 hover:bg-red-50 rounded transition-colors">
-          Delete {isMulti ? `(${selectedShapes.length})` : ''}
-        </button>
       </div>
     </div>
-  );
-}
-
-function ColorButton({ color, isActive, onClick, ...props }: { color: string; isActive: boolean; onClick: () => void; 'aria-label'?: string }) {
-  return (
-    <button
-      onClick={onClick}
-      aria-label={props['aria-label'] || `Color ${color}`}
-      className={`w-6 h-6 rounded border-2 transition-all ${isActive ? 'border-gray-800 ring-1 ring-gray-300' : 'border-gray-200 hover:border-gray-400'}`}
-      style={{ backgroundColor: color }}
-    />
   );
 }
 
@@ -303,9 +322,16 @@ function ArrowheadSelector({ value, onChange }: { value: ArrowheadType; onChange
   ];
 
   return (
-    <div className="flex gap-1">
+    <div className="flex bg-gray-100 p-0.5 rounded-md">
       {options.map(opt => (
-        <button key={opt.value} onClick={() => onChange(opt.value)} className={`flex-1 py-1.5 text-xs rounded ${value === opt.value ? 'bg-gray-800 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}>
+        <button 
+          key={opt.value} 
+          onClick={() => onChange(opt.value)} 
+          className={cn(
+            "flex-1 py-1 text-xs rounded-sm transition-all",
+            value === opt.value ? "bg-white shadow-sm text-black font-medium" : "text-gray-500 hover:text-gray-900"
+          )}
+        >
           {opt.label}
         </button>
       ))}
