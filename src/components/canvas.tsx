@@ -1,12 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { copyShapesToClipboard } from "../lib/clipboard/copy";
-import type {
-  ElbowConnectorShape,
-  EllipseShape,
-  RectangleShape,
-  Shape,
-  TextShape,
-} from "../lib/shapes/types";
+import type { ElbowConnectorShape, Shape } from "../lib/shapes/types";
 import { boundsIntersect } from "../lib/shapes/types";
 import { useShapeStore } from "../lib/store/shapes";
 import { Toast } from "./toast";
@@ -24,7 +18,6 @@ export function Canvas() {
     selectedIds,
     selectShape,
     selectShapes,
-    updateShape,
     clearSelection,
     deleteSelected,
     undo,
@@ -41,7 +34,6 @@ export function Canvas() {
   const [selectionRect, setSelectionRect] = useState<SelectionRect | null>(
     null
   );
-  const [editingId, setEditingId] = useState<string | null>(null);
   const [toast, setToast] = useState({ visible: false, message: "" });
   const [isPanning, setIsPanning] = useState(false);
   const lastMousePos = useRef({ x: 0, y: 0 });
@@ -78,9 +70,6 @@ export function Canvas() {
       if (!((e.ctrlKey || e.metaKey) && e.key === "c")) {
         return false;
       }
-      if (editingId) {
-        return true;
-      }
       e.preventDefault();
       copySelected();
       const selectedShapes = shapes.filter((s) => selectedIds.has(s.id));
@@ -99,9 +88,6 @@ export function Canvas() {
     const handlePaste = (e: KeyboardEvent) => {
       if (!((e.ctrlKey || e.metaKey) && e.key === "v")) {
         return false;
-      }
-      if (editingId) {
-        return true;
       }
       e.preventDefault();
       pasteClipboard();
@@ -130,9 +116,6 @@ export function Canvas() {
       if (e.key !== "Delete" && e.key !== "Backspace") {
         return false;
       }
-      if (editingId) {
-        return true;
-      }
       e.preventDefault();
       deleteSelected();
       return true;
@@ -154,11 +137,10 @@ export function Canvas() {
 
       if (e.key === "Escape") {
         clearSelection();
-        setEditingId(null);
       }
 
       // Spacebar for panning
-      if (e.code === "Space" && !editingId) {
+      if (e.code === "Space") {
         isSpacePressed.current = true;
         document.body.style.cursor = "grab";
       }
@@ -181,7 +163,6 @@ export function Canvas() {
   }, [
     deleteSelected,
     clearSelection,
-    editingId,
     undo,
     redo,
     copySelected,
@@ -320,31 +301,6 @@ export function Canvas() {
     selectShape(shape.id, isMultiSelect);
   };
 
-  const handleDoubleClick = (shape: Shape) => {
-    if (
-      shape.type === "rectangle" ||
-      shape.type === "text" ||
-      shape.type === "ellipse"
-    ) {
-      setEditingId(shape.id);
-    }
-  };
-
-  const handleLabelChange = (id: string, label: string) => {
-    const shape = shapes.find((s) => s.id === id);
-    if (shape?.type === "rectangle") {
-      updateShape(id, { label } as Partial<RectangleShape>);
-    } else if (shape?.type === "text") {
-      updateShape(id, { text: label } as Partial<TextShape>);
-    } else if (shape?.type === "ellipse") {
-      updateShape(id, { label } as Partial<EllipseShape>);
-    }
-  };
-
-  const handleEditBlur = () => {
-    setEditingId(null);
-  };
-
   return (
     <div
       className="absolute inset-0 overflow-hidden bg-[#fafafa]"
@@ -400,13 +356,9 @@ export function Canvas() {
 
           {shapes.map((shape) => (
             <ShapeRenderer
-              isEditing={editingId === shape.id}
               isSelected={selectedIds.has(shape.id)}
               key={shape.id}
               onClick={(e) => handleShapeClick(e, shape)}
-              onDoubleClick={() => handleDoubleClick(shape)}
-              onEditBlur={handleEditBlur}
-              onLabelChange={(label) => handleLabelChange(shape.id, label)}
               shape={shape}
             />
           ))}
@@ -442,22 +394,10 @@ export function Canvas() {
 interface ShapeRendererProps {
   shape: Shape;
   isSelected: boolean;
-  isEditing?: boolean;
   onClick: (e: React.MouseEvent) => void;
-  onDoubleClick?: () => void;
-  onLabelChange?: (label: string) => void;
-  onEditBlur?: () => void;
 }
 
-function ShapeRenderer({
-  shape,
-  isSelected,
-  isEditing,
-  onClick,
-  onDoubleClick,
-  onLabelChange,
-  onEditBlur,
-}: ShapeRendererProps) {
+function ShapeRenderer({ shape, isSelected, onClick }: ShapeRendererProps) {
   const renderHandles = (x: number, y: number, w: number, h: number) => {
     if (!isSelected) {
       return null;
@@ -483,7 +423,6 @@ function ShapeRenderer({
         // biome-ignore lint/a11y/useSemanticElements: SVG groups cannot be buttons
         <g
           onClick={onClick}
-          onDoubleClick={onDoubleClick}
           onKeyDown={(e) => {
             if (e.key === "Enter" || e.key === " ") {
               onClick(e as unknown as React.MouseEvent);
@@ -515,78 +454,7 @@ function ShapeRenderer({
             x={shape.x}
             y={shape.y}
           />
-          {isEditing ? (
-            <foreignObject
-              height={shape.height}
-              width={shape.width}
-              x={shape.x}
-              y={shape.y}
-            >
-              <div
-                style={{
-                  width: "100%",
-                  height: "100%",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  padding: 4,
-                }}
-              >
-                <textarea
-                  autoFocus
-                  defaultValue={shape.label}
-                  onBlur={onEditBlur}
-                  onChange={(e) => onLabelChange?.(e.target.value)}
-                  onKeyDown={(e) => e.key === "Escape" && onEditBlur?.()}
-                  style={{
-                    width: "100%",
-                    height: "100%",
-                    fontSize: shape.labelFontSize,
-                    fontFamily: "Arial, sans-serif",
-                    textAlign: "center",
-                    background: "transparent",
-                    border: "none",
-                    outline: "none",
-                    resize: "none",
-                    color: shape.labelColor,
-                    lineHeight: 1.3,
-                  }}
-                />
-              </div>
-            </foreignObject>
-          ) : (
-            shape.label && (
-              <foreignObject
-                height={shape.height}
-                pointerEvents="none"
-                width={shape.width}
-                x={shape.x}
-                y={shape.y}
-              >
-                <div
-                  style={{
-                    width: "100%",
-                    height: "100%",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    padding: 4,
-                    fontSize: shape.labelFontSize,
-                    fontFamily: "Arial, sans-serif",
-                    textAlign: "center",
-                    color: shape.labelColor,
-                    overflowWrap: "break-word",
-                    wordBreak: "break-word",
-                    whiteSpace: "pre-wrap",
-                    lineHeight: 1.3,
-                    userSelect: "none",
-                  }}
-                >
-                  {shape.label}
-                </div>
-              </foreignObject>
-            )
-          )}
+
           {renderHandles(shape.x, shape.y, shape.width, shape.height)}
         </g>
       );
@@ -625,78 +493,7 @@ function ShapeRenderer({
             stroke={shape.stroke}
             strokeWidth={shape.strokeWidth}
           />
-          {isEditing ? (
-            <foreignObject
-              height={shape.height}
-              width={shape.width}
-              x={shape.x}
-              y={shape.y}
-            >
-              <div
-                style={{
-                  width: "100%",
-                  height: "100%",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  padding: 14,
-                }}
-              >
-                <textarea
-                  autoFocus
-                  defaultValue={shape.label}
-                  onBlur={onEditBlur}
-                  onChange={(e) => onLabelChange?.(e.target.value)}
-                  onKeyDown={(e) => e.key === "Escape" && onEditBlur?.()}
-                  style={{
-                    width: "100%",
-                    height: "100%",
-                    fontSize: shape.labelFontSize,
-                    fontFamily: "Arial, sans-serif",
-                    textAlign: "center",
-                    background: "transparent",
-                    border: "none",
-                    outline: "none",
-                    resize: "none",
-                    color: shape.labelColor,
-                    lineHeight: 1.3,
-                  }}
-                />
-              </div>
-            </foreignObject>
-          ) : (
-            shape.label && (
-              <foreignObject
-                height={shape.height}
-                pointerEvents="none"
-                width={shape.width}
-                x={shape.x}
-                y={shape.y}
-              >
-                <div
-                  style={{
-                    width: "100%",
-                    height: "100%",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    padding: 14,
-                    fontSize: shape.labelFontSize,
-                    fontFamily: "Arial, sans-serif",
-                    textAlign: "center",
-                    color: shape.labelColor,
-                    overflowWrap: "break-word",
-                    wordBreak: "break-word",
-                    whiteSpace: "pre-wrap",
-                    lineHeight: 1.3,
-                    userSelect: "none",
-                  }}
-                >
-                  {shape.label}
-                </div>
-              </foreignObject>
-            )
-          )}
+
           {renderHandles(shape.x, shape.y, shape.width, shape.height)}
         </g>
       );
@@ -726,66 +523,6 @@ function ShapeRenderer({
         </g>
       );
     }
-
-    case "text":
-      return (
-        // biome-ignore lint/a11y/useSemanticElements: SVG groups cannot be buttons
-        <g
-          onClick={onClick}
-          onDoubleClick={onDoubleClick}
-          onKeyDown={(e) => {
-            if (e.key === "Enter" || e.key === " ") {
-              onClick(e as unknown as React.MouseEvent);
-            }
-          }}
-          role="button"
-          style={{ cursor: "pointer" }}
-          tabIndex={0}
-        >
-          {isEditing ? (
-            <foreignObject
-              height={shape.height + 20}
-              width={shape.width + 100}
-              x={shape.x}
-              y={shape.y}
-            >
-              <input
-                autoFocus
-                defaultValue={shape.text}
-                onBlur={onEditBlur}
-                onChange={(e) => onLabelChange?.(e.target.value)}
-                onKeyDown={(e) => e.key === "Enter" && onEditBlur?.()}
-                style={{
-                  width: "100%",
-                  fontSize: shape.fontSize,
-                  fontFamily: "Arial, sans-serif",
-                  background: "white",
-                  border: "1px solid #0066cc",
-                  borderRadius: 2,
-                  padding: "2px 6px",
-                  outline: "none",
-                }}
-                type="text"
-              />
-            </foreignObject>
-          ) : (
-            <>
-              <text
-                dominantBaseline="middle"
-                fill={shape.fill}
-                fontFamily="Arial, sans-serif"
-                fontSize={shape.fontSize}
-                textAnchor="middle"
-                x={shape.x + shape.width / 2}
-                y={shape.y + shape.height / 2}
-              >
-                {shape.text}
-              </text>
-              {renderHandles(shape.x, shape.y, shape.width, shape.height)}
-            </>
-          )}
-        </g>
-      );
 
     case "elbow-connector": {
       const path = getElbowPath(shape);

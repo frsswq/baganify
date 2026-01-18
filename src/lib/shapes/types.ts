@@ -4,7 +4,6 @@ export type ShapeType =
   | "rectangle"
   | "ellipse"
   | "triangle"
-  | "text"
   | "elbow-connector";
 export type ArrowheadType = "none" | "arrow" | "bar";
 
@@ -33,10 +32,6 @@ export interface RectangleShape extends BaseShape {
   width: number;
   height: number;
   cornerRadius: number;
-  // Embedded text label
-  label: string;
-  labelFontSize: number;
-  labelColor: string;
   // Org chart level (0 = top level, 1 = first reports, etc.)
   level: number;
 }
@@ -45,26 +40,12 @@ export interface EllipseShape extends BaseShape {
   type: "ellipse";
   width: number;
   height: number;
-  // Embedded text label
-  label: string;
-  labelFontSize: number;
-  labelColor: string;
   // Org chart level
   level: number;
 }
 
 export interface TriangleShape extends BaseShape {
   type: "triangle";
-  width: number;
-  height: number;
-}
-
-export interface TextShape extends BaseShape {
-  type: "text";
-  text: string;
-  fontSize: number;
-  fontFamily: string;
-  textAlign: "left" | "center" | "right";
   width: number;
   height: number;
 }
@@ -92,7 +73,6 @@ export type Shape =
   | RectangleShape
   | EllipseShape
   | TriangleShape
-  | TextShape
   | ElbowConnectorShape;
 
 // Default values
@@ -107,7 +87,6 @@ export function createId(): string {
 export function createRectangle(
   x: number,
   y: number,
-  label = "",
   level = 0
 ): RectangleShape {
   return {
@@ -122,20 +101,12 @@ export function createRectangle(
     strokeWidth: DEFAULT_STROKE_WIDTH,
     rotation: 0,
     cornerRadius: 0,
-    label,
-    labelFontSize: 10,
-    labelColor: "#000000",
     level,
     stacked: false,
   };
 }
 
-export function createEllipse(
-  x: number,
-  y: number,
-  label = "",
-  level = 0
-): EllipseShape {
+export function createEllipse(x: number, y: number, level = 0): EllipseShape {
   return {
     id: createId(),
     type: "ellipse",
@@ -147,9 +118,6 @@ export function createEllipse(
     stroke: DEFAULT_STROKE,
     strokeWidth: DEFAULT_STROKE_WIDTH,
     rotation: 0,
-    label,
-    labelFontSize: 10,
-    labelColor: "#000000",
     level,
     stacked: false,
   };
@@ -166,25 +134,6 @@ export function createTriangle(x: number, y: number): TriangleShape {
     fill: DEFAULT_FILL,
     stroke: DEFAULT_STROKE,
     strokeWidth: DEFAULT_STROKE_WIDTH,
-    rotation: 0,
-  };
-}
-
-export function createText(x: number, y: number, text = "Text"): TextShape {
-  return {
-    id: createId(),
-    type: "text",
-    x,
-    y,
-    text,
-    fontSize: 10,
-    fontFamily: "Arial, sans-serif",
-    textAlign: "center",
-    width: 100,
-    height: 30,
-    fill: DEFAULT_STROKE, // Text uses stroke color as fill
-    stroke: "none",
-    strokeWidth: 0,
     rotation: 0,
   };
 }

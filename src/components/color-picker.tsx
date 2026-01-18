@@ -10,7 +10,7 @@ interface ColorPickerProps {
   onChange: (color: string) => void;
   label?: string;
   className?: string;
-  type?: "fill" | "stroke" | "text"; // Start using this to determine "No Fill" vs "Automatic"
+  type?: "fill" | "stroke"; // Start using this to determine "No Fill" vs "Automatic"
 }
 
 // Precise Office 2013-2019 Default Theme Colors
@@ -134,15 +134,11 @@ export function ColorPicker({
 
   // Office Logic:
   // Fill/Stroke -> "No Fill" / "No Outline" (Transparent)
-  // Text -> "Automatic" (Black usually, but let's stick to black for now)
-  const isText = type === "text";
   let autoLabel = "No Fill";
-  if (isText) {
-    autoLabel = "Automatic";
-  } else if (type === "stroke") {
+  if (type === "stroke") {
     autoLabel = "No Outline";
   }
-  const autoColor = isText ? "#000000" : "none"; // 'none' translates to transparent in our renderer
+  const autoColor = "none"; // 'none' translates to transparent in our renderer
 
   const isAutoSelected =
     color === autoColor || (color === "transparent" && autoColor === "none");
@@ -196,16 +192,12 @@ export function ColorPicker({
             type="button"
           >
             <div className="relative flex h-5 w-5 items-center justify-center border border-gray-300 bg-white shadow-sm">
-              {isText ? (
-                <div className="h-full w-full bg-black" />
-              ) : (
-                <div className="absolute inset-0 flex items-center justify-center">
-                  {/* Office No Fill Look - just a white box or transparent, but user wants clear indication */}
-                  <span className="text-[10px] text-red-600 leading-none">
-                    🚫
-                  </span>
-                </div>
-              )}
+              <div className="absolute inset-0 flex items-center justify-center">
+                {/* Office No Fill Look - just a white box or transparent, but user wants clear indication */}
+                <span className="text-[10px] text-red-600 leading-none">
+                  🚫
+                </span>
+              </div>
             </div>
             <span className="font-semibold text-gray-800 text-xs">
               {autoLabel}

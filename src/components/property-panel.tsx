@@ -9,7 +9,6 @@ import {
   PencilSimpleIcon,
   SquareIcon,
   SquaresFourIcon,
-  TextTIcon,
 } from "@phosphor-icons/react";
 import { cn } from "@/lib/utils";
 import type {
@@ -46,9 +45,8 @@ export function PropertyPanel() {
   );
   // Connectors usually don't have fill (it's 'none'), so fill is for shapes/text
   const showFill = selectedShapes.some((s) => s.type !== "elbow-connector");
-  const showStroke = selectedShapes.some((s) => s.type !== "text");
-  const showTextStyles =
-    allRectOrEllipse || selectedShapes.some((s) => s.type === "text");
+  const showStroke = true;
+
   const showConnectors = selectedShapes.every(
     (s) => s.type === "elbow-connector"
   );
@@ -71,24 +69,18 @@ export function PropertyPanel() {
             selectedShapes={selectedShapes}
           />
         )}
-
         {/* Alignment / Distrib (Placeholder for future, keeping clean) */}
-
         <Separator className="bg-gray-100" />
-
-        {(showFill || showStroke || showTextStyles) && (
+        {(showFill || showStroke) && (
           <StyleSection
             firstShape={firstShape}
             isMulti={isMulti}
             onUpdate={handleBatchUpdate}
             showFill={showFill}
             showStroke={showStroke}
-            showTextStyles={showTextStyles}
           />
         )}
-
         <Separator className="bg-gray-100" />
-
         {/* Dimensions */}
         {!isMulti &&
           (firstShape.type === "rectangle" ||
@@ -98,7 +90,6 @@ export function PropertyPanel() {
               onUpdate={(updates) => updateShape(firstShape.id, updates)}
             />
           )}
-
         {/* Connector */}
         {showConnectors && (
           <ConnectorSection
@@ -107,9 +98,7 @@ export function PropertyPanel() {
             onUpdate={handleBatchUpdate}
           />
         )}
-
         <Separator className="bg-gray-100" />
-
         {/* Stacked Toggle - Very Compact */}
         {allRectOrEllipse && (
           <StackToggle
@@ -205,14 +194,12 @@ function ShapeTypeSelector({
 function StyleSection({
   showFill,
   showStroke,
-  showTextStyles,
   isMulti,
   firstShape,
   onUpdate,
 }: {
   showFill: boolean;
   showStroke: boolean;
-  showTextStyles: boolean;
   isMulti: boolean;
   firstShape: Shape;
   onUpdate: (updates: Partial<Shape>) => void;
@@ -242,7 +229,6 @@ function StyleSection({
           </div>
         </div>
       )}
-
       {showStroke && (
         <div className="flex items-center gap-2">
           <div className="flex w-6 justify-center text-gray-500">
@@ -270,58 +256,6 @@ function StyleSection({
               type="number"
               value={
                 isMulti ? "" : Math.floor(getProp(firstShape, "strokeWidth", 1))
-              }
-            />
-          </div>
-        </div>
-      )}
-
-      {showTextStyles && (
-        <div className="flex items-center gap-2">
-          <div className="flex w-6 justify-center text-gray-500">
-            <TextTIcon size={16} />
-          </div>
-          <div className="min-w-0">
-            <ColorPicker
-              className="h-7 w-auto min-w-[44px] px-2"
-              color={
-                isMulti
-                  ? "#000000"
-                  : getProp(
-                      firstShape,
-                      "labelColor",
-                      getProp(firstShape, "fill", "#000000")
-                    )
-              }
-              onChange={(c) =>
-                onUpdate({
-                  labelColor: c,
-                  ...(firstShape.type === "text" ? { fill: c } : {}),
-                } as Partial<Shape>)
-              }
-              type="text"
-            />
-          </div>
-          <div className="w-12">
-            <Input
-              className="h-7 border border-gray-200 bg-gray-50 px-1 text-center text-xs transition-colors focus:bg-white"
-              onChange={(e) => {
-                const size = Number.parseInt(e.target.value, 10) || 12;
-                onUpdate({
-                  labelFontSize: size,
-                  fontSize: size,
-                });
-              }}
-              placeholder="Size"
-              type="number"
-              value={
-                isMulti
-                  ? ""
-                  : getProp(
-                      firstShape,
-                      "labelFontSize",
-                      getProp(firstShape, "fontSize", 12)
-                    )
               }
             />
           </div>

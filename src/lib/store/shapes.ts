@@ -190,7 +190,7 @@ export const useShapeStore = create<ShapeStore>((set, get) => ({
     const { canvasSize, shapes } = get();
 
     // Create a box at placeholder position
-    const box = createRectangle(0, 0, "", level);
+    const box = createRectangle(0, 0, level);
 
     // Find boxes/ellipses at the level above to auto-connect
     const parentLevel = level - 1;
@@ -467,7 +467,7 @@ export const useShapeStore = create<ShapeStore>((set, get) => ({
 
     // Create parent box at level - 1
     const level = (currentShape.level ?? 0) - 1;
-    const parentBox = createRectangle(0, 0, "", level);
+    const parentBox = createRectangle(0, 0, level);
 
     // Connect Parent (Bottom) to Current (Top)
     const connector: ElbowConnectorShape = {
@@ -518,7 +518,7 @@ export const useShapeStore = create<ShapeStore>((set, get) => ({
 
     // Create child box at level + 1
     const level = (currentShape.level ?? 0) + 1;
-    const childBox = createRectangle(0, 0, "", level);
+    const childBox = createRectangle(0, 0, level);
 
     // Connect Current (Bottom) to Child (Top or Left depending on layout)
     const isVerticalStack = currentShape.childLayout === "vertical";
