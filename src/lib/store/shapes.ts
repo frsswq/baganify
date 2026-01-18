@@ -221,12 +221,14 @@ export const useShapeStore = create<ShapeStore>((set, get) => ({
   },
 
   setCanvasSize: (width, height) => {
-    set({ canvasSize: { width, height } });
-    // Re-layout with new size
-    const { shapes, layoutParams } = get();
-    if (shapes.length > 0) {
-      set({ shapes: layoutShapesByLevel(shapes, width, height, layoutParams) });
+    // Ignore invalid sizes
+    if (width <= 0 || height <= 0) {
+      return;
     }
+    set({ canvasSize: { width, height } });
+    // We do NOT re-layout shapes on resize anymore.
+    // This allows the infinite canvas (viewport) to handle "cropping" naturally
+    // without shapes shifting underneath the camera, which caused drifting/disappearing.
   },
 
   saveHistory: () => {
@@ -872,7 +874,8 @@ function layoutShapesByLevel(
 
   // Sort roots by x position to preserve relative order if possible?
   // No, typical auto-layout resets X. Sorting by ID is stable.
-  roots.sort((a, b) => a.x - b.x);
+  // Sort roots by x position to preserve relative order, use ID as stable tie-breaker
+  roots.sort((a, b) => a.x - b.x || a.id.localeCompare(b.id));
 
   const forestData = roots.map((root) => {
     const dim = calculateSubtreeDimensions(

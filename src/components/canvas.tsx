@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { copyShapesToClipboard } from "../lib/clipboard/copy";
 import type { ElbowConnectorShape, Shape } from "../lib/shapes/types";
 import { boundsIntersect } from "../lib/shapes/types";
@@ -65,27 +65,91 @@ export function Canvas() {
     };
   }, [setCanvasSize]);
 
+  // Refs for event handlers to avoid re-binding
+  const viewportRef = useRef(viewport);
+  const sizeRef = useRef(size);
+
   useEffect(() => {
-    const handleCopy = async (e: KeyboardEvent) => {
+    viewportRef.current = viewport;
+  }, [viewport]);
+
+  useEffect(() => {
+    sizeRef.current = size;
+  }, [size]);
+
+  // Move handlers outside useEffect to reduce complexity and allow better organization
+  const handleZoom = useCallback(
+    (e: KeyboardEvent) => {
+      if (!(e.ctrlKey || e.metaKey)) {
+        return false;
+      }
+
+      let newZoom = viewportRef.current.zoom;
+      if (e.key === "=" || e.key === "+") {
+        newZoom = Math.min(newZoom * 1.2, 5);
+      } else if (e.key === "-") {
+        newZoom = Math.max(newZoom / 1.2, 0.1);
+      } else if (e.key === "0") {
+        newZoom = 1;
+      } else {
+        return false;
+      }
+
+      e.preventDefault();
+
+      const currentViewport = viewportRef.current;
+      const currentSize = sizeRef.current;
+      const cx = currentSize.width / 2;
+      const cy = currentSize.height / 2;
+
+      const worldCx = (cx - currentViewport.x) / currentViewport.zoom;
+      const worldCy = (cy - currentViewport.y) / currentViewport.zoom;
+
+      const newViewportX = cx - worldCx * newZoom;
+      const newViewportY = cy - worldCy * newZoom;
+
+      setViewport({
+        x: newViewportX,
+        y: newViewportY,
+        zoom: newZoom,
+      });
+      return true;
+    },
+    [setViewport]
+  );
+
+  const handleCopy = useCallback(
+    (e: KeyboardEvent) => {
       if (!((e.ctrlKey || e.metaKey) && e.key === "c")) {
         return false;
       }
       e.preventDefault();
       copySelected();
-      const selectedShapes = shapes.filter((s) => selectedIds.has(s.id));
-      if (selectedShapes.length > 0) {
-        try {
-          await copyShapesToClipboard(selectedShapes);
-          setToast({ visible: true, message: "Copied to clipboard" });
-        } catch (err) {
-          console.error("Failed to copy", err);
-          setToast({ visible: true, message: "Copied to clipboard" });
-        }
-      }
-      return true;
-    };
 
-    const handlePaste = (e: KeyboardEvent) => {
+      // Async clipboard operation
+      (async () => {
+        const { shapes: currentShapes, selectedIds: currentSelectedIds } =
+          useShapeStore.getState();
+        const selectedShapes = currentShapes.filter((s) =>
+          currentSelectedIds.has(s.id)
+        );
+        if (selectedShapes.length > 0) {
+          try {
+            await copyShapesToClipboard(selectedShapes);
+            setToast({ visible: true, message: "Copied to clipboard" });
+          } catch (err) {
+            console.error("Failed to copy", err);
+            setToast({ visible: true, message: "Copied to clipboard" });
+          }
+        }
+      })();
+      return true;
+    },
+    [copySelected]
+  );
+
+  const handlePaste = useCallback(
+    (e: KeyboardEvent) => {
       if (!((e.ctrlKey || e.metaKey) && e.key === "v")) {
         return false;
       }
@@ -93,9 +157,12 @@ export function Canvas() {
       pasteClipboard();
       setToast({ visible: true, message: "Pasted from clipboard" });
       return true;
-    };
+    },
+    [pasteClipboard]
+  );
 
-    const handleHistory = (e: KeyboardEvent) => {
+  const handleHistory = useCallback(
+    (e: KeyboardEvent) => {
       if (!(e.ctrlKey || e.metaKey)) {
         return false;
       }
@@ -110,19 +177,28 @@ export function Canvas() {
         return true;
       }
       return false;
-    };
+    },
+    [undo, redo]
+  );
 
-    const handleDelete = (e: KeyboardEvent) => {
+  const handleDelete = useCallback(
+    (e: KeyboardEvent) => {
       if (e.key !== "Delete" && e.key !== "Backspace") {
         return false;
       }
       e.preventDefault();
       deleteSelected();
       return true;
-    };
+    },
+    [deleteSelected]
+  );
 
-    const handleKeyDown = async (e: KeyboardEvent) => {
-      if (await handleCopy(e)) {
+  const handleKeyDown = useCallback(
+    (e: KeyboardEvent) => {
+      if (handleZoom(e)) {
+        return;
+      }
+      if (handleCopy(e)) {
         return;
       }
       if (handlePaste(e)) {
@@ -144,32 +220,33 @@ export function Canvas() {
         isSpacePressed.current = true;
         document.body.style.cursor = "grab";
       }
-    };
+    },
+    [
+      handleZoom,
+      handleCopy,
+      handlePaste,
+      handleHistory,
+      handleDelete,
+      clearSelection,
+    ]
+  );
 
-    const handleKeyUp = (e: KeyboardEvent) => {
-      if (e.code === "Space") {
-        isSpacePressed.current = false;
-        document.body.style.cursor = "default";
-        setIsPanning(false);
-      }
-    };
+  const handleKeyUp = useCallback((e: KeyboardEvent) => {
+    if (e.code === "Space") {
+      isSpacePressed.current = false;
+      document.body.style.cursor = "default";
+      setIsPanning(false);
+    }
+  }, []);
 
+  useEffect(() => {
     window.addEventListener("keydown", handleKeyDown);
     window.addEventListener("keyup", handleKeyUp);
     return () => {
       window.removeEventListener("keydown", handleKeyDown);
       window.removeEventListener("keyup", handleKeyUp);
     };
-  }, [
-    deleteSelected,
-    clearSelection,
-    undo,
-    redo,
-    copySelected,
-    pasteClipboard,
-    shapes,
-    selectedIds,
-  ]);
+  }, [handleKeyDown, handleKeyUp]);
 
   const getSVGPoint = (clientX: number, clientY: number) => {
     const svg = svgRef.current;
@@ -182,39 +259,70 @@ export function Canvas() {
     return { x, y };
   };
 
-  const handleWheel = (e: React.WheelEvent) => {
-    if (e.ctrlKey || e.metaKey) {
-      e.preventDefault();
-      const zoomSensitivity = 0.001;
-      const newZoom = Math.min(
-        Math.max(0.1, viewport.zoom - e.deltaY * zoomSensitivity),
-        5
-      );
-
-      // Zoom towards mouse
-      const rect = svgRef.current?.getBoundingClientRect();
-      if (!rect) {
-        return;
-      }
-
-      const mouseX = e.clientX - rect.left;
-      const mouseY = e.clientY - rect.top;
-
-      const zoomFactor = newZoom / viewport.zoom;
-
-      const newX = mouseX - (mouseX - viewport.x) * zoomFactor;
-      const newY = mouseY - (mouseY - viewport.y) * zoomFactor;
-
-      setViewport({ x: newX, y: newY, zoom: newZoom });
-    } else {
-      // Pan
-      setViewport({
-        ...viewport,
-        x: viewport.x - e.deltaX,
-        y: viewport.y - e.deltaY,
-      });
+  // Native wheel handler for non-passive listener to prevent browser zoom
+  useEffect(() => {
+    const container = containerRef.current;
+    if (!container) {
+      return;
     }
-  };
+
+    const onWheel = (e: WheelEvent) => {
+      // Always prevent default if Ctrl is pressed (Zoom)
+      // or if it's a pinch-zoom (safari/trackpad) which usually looks like Ctrl+Wheel
+      if (e.ctrlKey || e.metaKey) {
+        e.preventDefault();
+
+        // Use refs to get fresh state without re-binding listener
+        const currentViewport = viewportRef.current;
+
+        const zoomSensitivity = 0.001;
+        // e.deltaY is standard, but some browsers use deltaMode.
+        // For trackpads, deltaY is usually pixel-like.
+        const delta = e.deltaY;
+
+        const newZoom = Math.min(
+          Math.max(0.1, currentViewport.zoom - delta * zoomSensitivity),
+          5
+        );
+
+        // Zoom towards mouse pointer
+        // We need bounding rect relative to the container
+        const rect = container.getBoundingClientRect();
+        const mouseX = e.clientX - rect.left;
+        const mouseY = e.clientY - rect.top;
+
+        const zoomFactor = newZoom / currentViewport.zoom;
+
+        const newX = mouseX - (mouseX - currentViewport.x) * zoomFactor;
+        const newY = mouseY - (mouseY - currentViewport.y) * zoomFactor;
+
+        setViewport({ x: newX, y: newY, zoom: newZoom });
+      } else {
+        // Pan
+        // Also prevent default browser back-swipe etc if we are panning?
+        // Usually safe to allow default if not zooming, but figma blocks all.
+        // Let's block if we are actually spanning.
+        // But for now, just standard pan logic.
+        // Actually, let's allow default scroll if not zooming?
+        // No, we are an infinite canvas, we handle the scroll ourselves.
+        e.preventDefault();
+
+        const currentViewport = viewportRef.current;
+        setViewport({
+          ...currentViewport,
+          x: currentViewport.x - e.deltaX,
+          y: currentViewport.y - e.deltaY,
+        });
+      }
+    };
+
+    // Passive: false is critical to be able to preventDefault the browser zoom
+    container.addEventListener("wheel", onWheel, { passive: false });
+
+    return () => {
+      container.removeEventListener("wheel", onWheel);
+    };
+  }, [setViewport]);
 
   const handleMouseDown = (e: React.MouseEvent) => {
     if (e.button === 1 || (e.button === 0 && isSpacePressed.current)) {
@@ -314,7 +422,6 @@ export function Canvas() {
         onMouseLeave={handleMouseUp}
         onMouseMove={handleMouseMove}
         onMouseUp={handleMouseUp}
-        onWheel={handleWheel}
         ref={svgRef}
         width={size.width}
       >
