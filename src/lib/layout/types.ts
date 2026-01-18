@@ -8,5 +8,5 @@ export interface LayoutParams {
 export const DEFAULT_LAYOUT_PARAMS: LayoutParams = {
   levelHeight: 40,
   shapeGap: 20,
-  verticalIndent: 20,
+  verticalIndent: 0,
 };

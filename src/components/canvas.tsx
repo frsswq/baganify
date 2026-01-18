@@ -12,6 +12,15 @@ interface SelectionRect {
   currentY: number;
 }
 
+function isInputTarget(e: KeyboardEvent) {
+  const target = e.target as HTMLElement;
+  return (
+    target.tagName === "INPUT" ||
+    target.tagName === "TEXTAREA" ||
+    target.isContentEditable
+  );
+}
+
 export function Canvas() {
   const {
     shapes: shapesRecord,
@@ -194,22 +203,22 @@ export function Canvas() {
   };
 
   const handleKeyDown = (e: KeyboardEvent) => {
-    if (handleZoom(e)) {
+    // Ignore global shortcuts if an input/textarea is focused
+    if (isInputTarget(e)) {
+      if (e.key === "Escape") {
+        (e.target as HTMLElement).blur();
+      }
       return;
     }
-    if (handleSelectAll(e)) {
-      return;
-    }
-    if (handleCopy(e)) {
-      return;
-    }
-    if (handlePaste(e)) {
-      return;
-    }
-    if (handleHistory(e)) {
-      return;
-    }
-    if (handleDelete(e)) {
+
+    if (
+      handleZoom(e) ||
+      handleSelectAll(e) ||
+      handleCopy(e) ||
+      handlePaste(e) ||
+      handleHistory(e) ||
+      handleDelete(e)
+    ) {
       return;
     }
 
