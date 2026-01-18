@@ -658,7 +658,7 @@ export const useShapeStore = create<ShapeStore>((set, get) => ({
 
       return {
         shapes: updateAllConnectors(layouted),
-        selectedIds: new Set([parentBox.id]),
+        // selectedIds: new Set([parentBox.id]), // Preserve selection (User Request)
       };
     });
   },
@@ -725,7 +725,7 @@ export const useShapeStore = create<ShapeStore>((set, get) => ({
 
       return {
         shapes: updateAllConnectors(enforcedLayouted),
-        selectedIds: new Set([childBox.id]),
+        // selectedIds: new Set([childBox.id]), // Preserve selection (User Request)
       };
     });
   },
