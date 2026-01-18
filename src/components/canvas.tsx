@@ -161,6 +161,19 @@ export function Canvas() {
     [pasteClipboard]
   );
 
+  const handleSelectAll = useCallback(
+    (e: KeyboardEvent) => {
+      if (!((e.ctrlKey || e.metaKey) && (e.key === "a" || e.key === "A"))) {
+        return false;
+      }
+      e.preventDefault();
+      const { shapes } = useShapeStore.getState();
+      selectShapes(shapes.map((s) => s.id));
+      return true;
+    },
+    [selectShapes]
+  );
+
   const handleHistory = useCallback(
     (e: KeyboardEvent) => {
       if (!(e.ctrlKey || e.metaKey)) {
@@ -198,6 +211,9 @@ export function Canvas() {
       if (handleZoom(e)) {
         return;
       }
+      if (handleSelectAll(e)) {
+        return;
+      }
       if (handleCopy(e)) {
         return;
       }
@@ -223,6 +239,7 @@ export function Canvas() {
     },
     [
       handleZoom,
+      handleSelectAll,
       handleCopy,
       handlePaste,
       handleHistory,

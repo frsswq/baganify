@@ -526,7 +526,7 @@ export const useShapeStore = create<ShapeStore>((set, get) => ({
     // When we paste a tree, or paste children into a context (though paste is usually independent)
     // If the pasted shapes contain a parent-child relationship where the parent is vertical,
     // we must ensure the connector is 'left' side.
-    newShapes.forEach((shape) => {
+    for (const shape of newShapes) {
       if (
         shape.type === "elbow-connector" &&
         shape.startBinding &&
@@ -545,8 +545,7 @@ export const useShapeStore = create<ShapeStore>((set, get) => ({
           shape.endBinding.side = "left";
         }
       }
-    });
-
+    }
     set((state) => {
       const allShapes = [...state.shapes, ...newShapes];
       const layouted = layoutShapesByLevel(
