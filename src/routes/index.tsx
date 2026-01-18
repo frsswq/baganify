@@ -32,8 +32,16 @@ function ShapeBuilder() {
       </div>
       <div className="hidden h-dvh w-full overflow-hidden bg-[#f8f9fa] md:flex">
         {/* Left Sidebar - Property Panel */}
-        <div className="relative z-20 h-full w-[240px] flex-none border-gray-200 border-r bg-white">
-          <PropertyPanel />
+        <div className="relative z-20 flex h-full w-[240px] flex-none flex-col border-gray-200 border-r bg-white">
+          <div className="flex h-12 flex-none items-center gap-2 border-gray-200 border-b px-4">
+            <img alt="Baganify Logo" className="h-6 w-6" src="/favicon.svg" />
+            <span className="font-semibold text-gray-900 text-sm">
+              Baganify
+            </span>
+          </div>
+          <div className="min-h-0 flex-1">
+            <PropertyPanel />
+          </div>
         </div>
 
         {/* Main Content Area */}
