@@ -4,7 +4,7 @@
   <h1>baganify</h1>
 
   <p>
-    <strong>local-first, office-compatible shape generator for the web.</strong>
+    <strong>local-first, chart generator for the web.</strong>
   </p>
 
   <p>
@@ -19,7 +19,6 @@
 
 ## features
 
-- **office compatibility**: shapes copied from here work natively in powerpoint and word.
 - **org charts**: auto-layout generation for organizational hierarchies.
 - **vector graphics**: full svg support with precise path manipulation.
 - **modern ui**: built with shadcn principles and base ui primitives.

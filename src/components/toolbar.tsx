@@ -7,8 +7,9 @@ import {
   PlusIcon,
   TrashIcon,
 } from "@phosphor-icons/react";
+import { hasGrandchildren } from "../lib/layout/algorithm";
 import type { ElbowConnectorShape } from "../lib/shapes/types";
-import { hasGrandchildren, useShapeStore } from "../lib/store/shapes";
+import { useShapeStore } from "../lib/store/shapes";
 import { cn } from "../lib/utils";
 import { LayoutSettings } from "./layout-settings";
 import { Button } from "./ui/button";

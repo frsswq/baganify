@@ -11,6 +11,7 @@ import {
   SquaresFourIcon,
 } from "@phosphor-icons/react";
 import { cn } from "@/lib/utils";
+import { hasGrandchildren } from "../lib/layout/algorithm";
 import type {
   ArrowheadType,
   ElbowConnectorShape,
@@ -18,7 +19,7 @@ import type {
   RectangleShape,
   Shape,
 } from "../lib/shapes/types";
-import { hasGrandchildren, useShapeStore } from "../lib/store/shapes";
+import { useShapeStore } from "../lib/store/shapes";
 import { ColorPicker } from "./color-picker";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
