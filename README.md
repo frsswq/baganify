@@ -1,7 +1,7 @@
 <div align="center">
-  <img src="public/favicon.svg" height="100" alt="shapebuilder logo" />
+  <img src="public/favicon.svg" height="100" alt="baganify logo" />
 
-  <h1>shapebuilder</h1>
+  <h1>baganify</h1>
 
   <p>
     <strong>office-compatible shape generator for the web.</strong>
@@ -29,8 +29,8 @@
 clone the project and install dependencies:
 
 ```bash
-git clone https://github.com/yourusername/shape-builder.git
-cd shape-builder
+git clone https://github.com/frsswq/baganify.git
+cd baganify
 bun install
 ```
 
