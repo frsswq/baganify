@@ -82,7 +82,7 @@ const MAX_HISTORY = 50;
 export const useShapeStore = create<ShapeStore>((set, get) => ({
   shapes: {},
   shapeIds: [],
-  selectedIds: new Set(),
+  selectedIds: new Set<string>(),
   canvasSize: { width: 1200, height: 800 },
   viewport: { x: 0, y: 0, zoom: 1 },
   layoutParams: DEFAULT_LAYOUT_PARAMS,
@@ -337,7 +337,7 @@ export const useShapeStore = create<ShapeStore>((set, get) => ({
       const newShapes = { ...state.shapes };
       for (const id of ids) {
         if (newShapes[id]) {
-          newShapes[id] = { ...newShapes[id], ...updates };
+          newShapes[id] = { ...newShapes[id], ...updates } as Shape;
         }
       }
       return { shapes: newShapes };
@@ -347,8 +347,8 @@ export const useShapeStore = create<ShapeStore>((set, get) => ({
   selectShape: (id, addToSelection = false) => {
     set((state) => {
       const newSelected = addToSelection
-        ? new Set(state.selectedIds)
-        : new Set();
+        ? new Set<string>(state.selectedIds)
+        : new Set<string>();
       newSelected.add(id);
       return { selectedIds: newSelected };
     });
@@ -358,7 +358,7 @@ export const useShapeStore = create<ShapeStore>((set, get) => ({
     set({ selectedIds: new Set(ids) });
   },
 
-  clearSelection: () => set({ selectedIds: new Set() }),
+  clearSelection: () => set({ selectedIds: new Set<string>() }),
 
   clearAll: () => {
     get().saveHistory();
@@ -391,7 +391,7 @@ export const useShapeStore = create<ShapeStore>((set, get) => ({
       return {
         shapes: newShapes,
         shapeIds: newShapeIds,
-        selectedIds: new Set(),
+        selectedIds: new Set<string>(),
       };
     });
   },

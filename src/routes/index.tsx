@@ -9,7 +9,7 @@ import { useShapeStore } from "../lib/store/shapes";
 export const Route = createFileRoute("/")({ component: ShapeBuilder });
 
 function ShapeBuilder() {
-  const { shapes } = useShapeStore();
+  const { shapeIds } = useShapeStore();
 
   return (
     <>
@@ -34,7 +34,13 @@ function ShapeBuilder() {
         {/* Left Sidebar - Property Panel */}
         <div className="relative z-20 flex h-full w-[240px] flex-none flex-col border-gray-200 border-r bg-white">
           <div className="flex h-12 flex-none items-center gap-2 border-gray-200 border-b px-4">
-            <img alt="Baganify Logo" className="h-6 w-6" src="/favicon.svg" />
+            <img
+              alt="Baganify Logo"
+              className="h-6 w-6"
+              height={24}
+              src="/favicon.svg"
+              width={24}
+            />
             <span className="font-semibold text-gray-900 text-sm">
               Baganify
             </span>
@@ -62,9 +68,9 @@ function ShapeBuilder() {
           </div>
 
           {/* Shape count badge */}
-          {shapes.length > 0 && (
+          {shapeIds.length > 0 && (
             <div className="absolute right-4 bottom-4 z-10 rounded-lg border border-gray-200 bg-white px-2 py-1 text-gray-500 text-xs shadow-sm">
-              {shapes.length} shape{shapes.length !== 1 ? "s" : ""}
+              {shapeIds.length} shape{shapeIds.length !== 1 ? "s" : ""}
             </div>
           )}
         </div>
