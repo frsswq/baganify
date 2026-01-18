@@ -28,9 +28,17 @@ import { Separator } from "./ui/separator";
 // ... imports
 
 export function PropertyPanel() {
-  const { shapes, selectedIds, updateShape, updateShapes, removeShape } =
-    useShapeStore();
-  const selectedShapes = shapes.filter((s) => selectedIds.has(s.id));
+  const {
+    shapes: shapesRecord,
+    selectedIds,
+    updateShape,
+    updateShapes,
+    removeShape,
+  } = useShapeStore();
+  const selectedShapes = Array.from(selectedIds)
+    .map((id) => shapesRecord[id])
+    .filter(Boolean);
+  const shapesArray = Object.values(shapesRecord);
 
   const isMulti = selectedShapes.length > 1;
   const firstShape = selectedShapes[0] as Shape;
@@ -105,7 +113,7 @@ export function PropertyPanel() {
           <StackToggle
             onUpdate={handleBatchUpdate}
             selectedShapes={selectedShapes}
-            shapes={shapes}
+            shapes={shapesArray}
           />
         )}
       </div>

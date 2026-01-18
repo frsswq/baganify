@@ -17,7 +17,8 @@ import { Separator } from "./ui/separator";
 
 export function Toolbar() {
   const {
-    shapes,
+    shapes: shapesRecord,
+    shapeIds,
     selectedIds,
     addBoxAtLevel,
     addParent,
@@ -27,6 +28,8 @@ export function Toolbar() {
     redo,
     toggleChildLayout,
   } = useShapeStore();
+
+  const shapes = shapeIds.map((id) => shapesRecord[id]);
 
   const selectedShapes = shapes.filter((s) => selectedIds.has(s.id));
   const selectedShape = selectedShapes.length === 1 ? selectedShapes[0] : null;

@@ -14,7 +14,8 @@ interface SelectionRect {
 
 export function Canvas() {
   const {
-    shapes,
+    shapes: shapesRecord,
+    shapeIds,
     selectedIds,
     selectShape,
     selectShapes,
@@ -28,6 +29,8 @@ export function Canvas() {
     viewport,
     setViewport,
   } = useShapeStore();
+
+  const shapes = shapeIds.map((id) => shapesRecord[id]);
   const svgRef = useRef<SVGSVGElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const [size, setSize] = useState({ width: 800, height: 600 });
@@ -126,7 +129,8 @@ export function Canvas() {
     (async () => {
       const { shapes: currentShapes, selectedIds: currentSelectedIds } =
         useShapeStore.getState();
-      const selectedShapes = currentShapes.filter((s) =>
+      const shapesArray = Object.values(currentShapes);
+      const selectedShapes = shapesArray.filter((s) =>
         currentSelectedIds.has(s.id)
       );
       if (selectedShapes.length > 0) {
@@ -157,8 +161,9 @@ export function Canvas() {
       return false;
     }
     e.preventDefault();
-    const { shapes } = useShapeStore.getState();
-    selectShapes(shapes.map((s) => s.id));
+    e.preventDefault();
+    const { shapeIds } = useShapeStore.getState();
+    selectShapes(shapeIds);
     return true;
   };
 

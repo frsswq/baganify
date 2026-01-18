@@ -387,13 +387,10 @@ function layoutTreeRecursive(
   const childrenDims = childrenIds.map((id) => layoutData.get(id));
 
   if (node.childLayout === "vertical") {
-    const parentCenterX = nodeX + node.width / 2;
-    const maxChildWidth =
-      childrenDims.length > 0
-        ? Math.max(...childrenDims.map((d) => d?.width ?? 0))
-        : 0;
+    // For vertical layout, align children relative to parent Left edge
+    // This allows the connector (from Center) to travel Left then Down
+    const childStartX = nodeX + params.verticalIndent;
 
-    const childStartX = parentCenterX - maxChildWidth / 2;
     let currentChildY = y + node.height + params.levelHeight;
 
     for (const [index, dim] of childrenDims.entries()) {
