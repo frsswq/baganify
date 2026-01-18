@@ -416,10 +416,16 @@ export function Canvas() {
     <div
       className="absolute inset-0 overflow-hidden bg-[#fafafa]"
       ref={containerRef}
+      style={{
+        backgroundImage: "radial-gradient(#e5e5e5 1px, transparent 1px)",
+        backgroundSize: `${20 * viewport.zoom}px ${20 * viewport.zoom}px`,
+        backgroundPosition: `${viewport.x}px ${viewport.y}px`,
+      }}
     >
       {/* biome-ignore lint/a11y/noNoninteractiveElementInteractions: Canvas SVG handles specific pointer events */}
       <svg
         className="h-full w-full touch-none select-none"
+        data-canvas="true"
         height={size.height}
         onMouseDown={handleMouseDown}
         onMouseLeave={handleMouseUp}
@@ -429,16 +435,6 @@ export function Canvas() {
         width={size.width}
       >
         <title>Canvas</title>
-        <defs>
-          <pattern
-            height="20"
-            id="grid"
-            patternUnits="userSpaceOnUse"
-            width="20"
-          >
-            <circle cx="2" cy="2" fill="#e5e5e5" r="0.5" />
-          </pattern>
-        </defs>
 
         {/* Background handles events but needs to span infinite... 
             Actually, the panning moves the viewport. 
@@ -455,14 +451,6 @@ export function Canvas() {
                 But wrapping everything in <g> is easiest for React state.
                 Let's use a super large rect for now centered on 0,0.
             */}
-          <rect
-            data-canvas="true"
-            fill="url(#grid)"
-            height={100_000}
-            width={100_000}
-            x={-50_000}
-            y={-50_000}
-          />
 
           {shapes.map((shape) => (
             <ShapeRenderer
