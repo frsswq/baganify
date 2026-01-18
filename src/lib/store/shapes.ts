@@ -409,21 +409,47 @@ export const useShapeStore = create<ShapeStore>((set, get) => ({
   },
 
   updateShape: (id, updates) => {
-    set((state) => ({
-      shapes: state.shapes.map((s) =>
+    set((state) => {
+      const updatedShapes = state.shapes.map((s) =>
         s.id === id ? ({ ...s, ...updates } as Shape) : s
-      ),
-    }));
+      );
+
+      // Trigger layout update if dimensions change
+      if ("width" in updates || "height" in updates) {
+        const layouted = layoutShapesByLevel(
+          updatedShapes,
+          state.canvasSize.width,
+          state.canvasSize.height,
+          state.layoutParams
+        );
+        return { shapes: updateAllConnectors(layouted) };
+      }
+
+      return { shapes: updatedShapes };
+    });
   },
 
   updateShapes: (ids, updates) => {
     get().saveHistory();
     const idSet = new Set(ids);
-    set((state) => ({
-      shapes: state.shapes.map((s) =>
+    set((state) => {
+      const updatedShapes = state.shapes.map((s) =>
         idSet.has(s.id) ? ({ ...s, ...updates } as Shape) : s
-      ),
-    }));
+      );
+
+      // Trigger layout update if dimensions change
+      if ("width" in updates || "height" in updates) {
+        const layouted = layoutShapesByLevel(
+          updatedShapes,
+          state.canvasSize.width,
+          state.canvasSize.height,
+          state.layoutParams
+        );
+        return { shapes: updateAllConnectors(layouted) };
+      }
+
+      return { shapes: updatedShapes };
+    });
   },
 
   selectShape: (id, addToSelection = false) => {
