@@ -79,6 +79,117 @@ interface ShapeStore {
   getSelectedShapes: () => Shape[];
 }
 
+export function hasGrandchildren(shapeId: string, shapes: Shape[]): boolean {
+  const connectors = shapes.filter(
+    (s): s is ElbowConnectorShape => s.type === "elbow-connector"
+  );
+
+  // We can reuse buildGraph logic here or simplify
+  // Since buildGraph is not exported, let's just duplicate the connector mapping logic for safety/simplicity
+  // or verify if we can export buildGraph. It is at bottom of file.
+  // Let's implement lightweight check.
+
+  const childrenMap = new Map<string, string[]>();
+
+  for (const conn of connectors) {
+    if (
+      conn.startBinding &&
+      conn.endBinding &&
+      conn.startBinding.shapeId &&
+      conn.endBinding.shapeId
+    ) {
+      const parentId = conn.startBinding.shapeId;
+      const childId = conn.endBinding.shapeId;
+      if (!childrenMap.has(parentId)) {
+        childrenMap.set(parentId, []);
+      }
+      childrenMap.get(parentId)?.push(childId);
+    }
+  }
+
+  const children = childrenMap.get(shapeId) || [];
+  if (children.length === 0) {
+    return false;
+  }
+
+  for (const childId of children) {
+    const grandChildren = childrenMap.get(childId) || [];
+    if (grandChildren.length > 0) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
+// Enforce that ancestors of a newly added node must be horizontal if they become "grandparents"
+function enforceHorizontalParents(
+  newChildId: string,
+  shapes: Shape[]
+): Shape[] {
+  // Build parent map to traverse up
+  const connectors = shapes.filter(
+    (s): s is ElbowConnectorShape => s.type === "elbow-connector"
+  );
+  const parentMap = new Map<string, string>();
+
+  for (const conn of connectors) {
+    if (
+      conn.startBinding &&
+      conn.endBinding &&
+      conn.startBinding.shapeId &&
+      conn.endBinding.shapeId
+    ) {
+      parentMap.set(conn.endBinding.shapeId, conn.startBinding.shapeId);
+    }
+  }
+
+  const newShapes = [...shapes];
+  let currentId = newChildId;
+  let parentId = parentMap.get(currentId);
+
+  // Traverse up the tree
+  while (parentId) {
+    // If parent exists, check if it's vertical.
+    // Since we just added a child (or grandchild, etc.) to the tree,
+    // this ancestor effectively has at least one level below it (currentId).
+    // If currentId is not a leaf (e.g. paste), it's even deeper.
+    // But simpler logic: If an ancestor is vertical, and we are adding depth,
+    // we should check if that ancestor now has grandchildren.
+    // But expensive to check hasGrandchildren in loop?
+    // Optimization: start from parent of the node we added to.
+    // If we added to Node X. Node X has children (newChild).
+    // Node X's parent (Node Y) has grandchildren.
+    // So Node Y must be horizontal.
+    // Node Y's parent (Node Z) has great-grandchildren.
+    // So Node Z must be horizontal.
+    // So basically, walk up from the PARENT of the modified node, and enforce horizontal.
+
+    // This loop walks up starting from the immediate parent of newChildId.
+    const parentIndex = newShapes.findIndex((s) => s.id === parentId);
+    if (parentIndex !== -1) {
+      const parentShape = newShapes[parentIndex];
+      // Only modify if it's a box and currently vertical
+      if (
+        (parentShape.type === "rectangle" || parentShape.type === "ellipse") &&
+        parentShape.childLayout === "vertical" &&
+        currentId !== newChildId
+      ) {
+        // We are at least one level up from the new child, so this parentId is a Grandparent of newChildId.
+        newShapes[parentIndex] = {
+          ...parentShape,
+          childLayout: "horizontal",
+        };
+      }
+    }
+
+    currentId = parentId;
+    parentId = parentMap.get(currentId);
+  }
+
+  return newShapes;
+}
+
 const MAX_HISTORY = 50;
 
 export const useShapeStore = create<ShapeStore>((set, get) => ({
@@ -237,8 +348,17 @@ export const useShapeStore = create<ShapeStore>((set, get) => ({
       );
       // Update connector positions
       const final = updateAllConnectors(layouted);
+
+      const enforced = enforceHorizontalParents(box.id, final);
+      const enforcedLayouted = layoutShapesByLevel(
+        enforced,
+        canvasSize.width,
+        canvasSize.height,
+        state.layoutParams
+      );
+
       return {
-        shapes: final,
+        shapes: updateAllConnectors(enforcedLayouted),
         selectedIds: new Set([box.id]),
       };
     });
@@ -382,8 +502,23 @@ export const useShapeStore = create<ShapeStore>((set, get) => ({
         canvasSize.height,
         state.layoutParams
       );
+
+      // Enforce constraints for all pasted shapes?
+      // Just run a pass for each root of pasted shapes?
+      // Since paste can be complex, let's just stick to layout for now or iterate
+      // Iterating all pasted shapes as potential leaves is safest but maybe slow.
+      // Optimistic: Just layout. If user connects them later, connection logic will handle Enforce.
+      // If we paste a whole vertical tree? It is existing structure.
+      // Let's rely on individual connection actions for strict enforcement, or iterate newShapes.
+
+      const enforcedShapes = updateAllConnectors(layouted);
+      // Run enforcement for each new shape as if it were a leaf (catching cases where we paste into a tree?)
+      // Paste usually adds separate islands.
+      // If we paste INTO a tree (not possible yet via UI, only add).
+      // So paste is safe as islands.
+
       return {
-        shapes: updateAllConnectors(layouted),
+        shapes: enforcedShapes,
         selectedIds: new Set(newShapes.map((s) => s.id)),
       };
     });
@@ -433,8 +568,20 @@ export const useShapeStore = create<ShapeStore>((set, get) => ({
       const newShapes = [...state.shapes, connector];
       // Update connector to snap to bindings immediately
       const finalShapes = updateAllConnectors(newShapes);
+
+      // Enforce: shape2 is the child. Check if shape1 (parent) creates a deep tree.
+      const enforced = enforceHorizontalParents(shape2.id, finalShapes);
+      // Re-layout needed if we changed layout props
+      const { canvasSize } = get();
+      const enforcedLayouted = layoutShapesByLevel(
+        enforced,
+        canvasSize.width,
+        canvasSize.height,
+        state.layoutParams
+      );
+
       return {
-        shapes: finalShapes,
+        shapes: updateAllConnectors(enforcedLayouted),
         selectedIds: new Set([connector.id]),
       };
     });
@@ -496,6 +643,19 @@ export const useShapeStore = create<ShapeStore>((set, get) => ({
         canvasSize.height,
         state.layoutParams
       );
+
+      // parentBox is the new top. currentShape is child.
+      // If curentShape has children, parentBox (level -1) -> currentShape (level 0) -> children (level 1).
+      // parentBox is Grandparent.
+      // But parentBox is newly created, default is horizontal.
+      // However if we set parentBox to vertical later... handled by future actions.
+      // But wait, if parentBox is created, and we connect it to currentShape...
+      // currentShape becomes child. Does currentShape have children?
+      // If yes, currentShape is a parent. parentBox is a grandparent.
+      // parentBox default box create is horizontal?
+      // Yes, default is horizontal. So we are safe.
+      // Just return.
+
       return {
         shapes: updateAllConnectors(layouted),
         selectedIds: new Set([parentBox.id]),
@@ -554,8 +714,17 @@ export const useShapeStore = create<ShapeStore>((set, get) => ({
         canvasSize.height,
         state.layoutParams
       );
+
+      const enforced = enforceHorizontalParents(childBox.id, layouted);
+      const enforcedLayouted = layoutShapesByLevel(
+        enforced,
+        canvasSize.width,
+        canvasSize.height,
+        state.layoutParams
+      );
+
       return {
-        shapes: updateAllConnectors(layouted),
+        shapes: updateAllConnectors(enforcedLayouted),
         selectedIds: new Set([childBox.id]),
       };
     });
@@ -566,11 +735,21 @@ export const useShapeStore = create<ShapeStore>((set, get) => ({
     const { canvasSize } = get();
 
     set((state) => {
-      const newLayout =
-        (state.shapes.find((s) => s.id === shapeId)?.childLayout ||
-          "horizontal") === "horizontal"
-          ? "vertical"
-          : "horizontal";
+      const shape = state.shapes.find((s) => s.id === shapeId);
+      if (!shape) {
+        return {};
+      }
+
+      const currentLayout = shape.childLayout || "horizontal";
+      const newLayout: "horizontal" | "vertical" =
+        currentLayout === "horizontal" ? "vertical" : "horizontal";
+
+      // Constraint: Cannot be vertical if has grandchildren
+      if (newLayout === "vertical" && hasGrandchildren(shapeId, state.shapes)) {
+        // Option: Fail silently or toast?
+        // Logic: just don't toggle.
+        return {};
+      }
 
       const newShapes = state.shapes.map((s) => {
         if (s.id === shapeId) {

@@ -18,7 +18,7 @@ import type {
   RectangleShape,
   Shape,
 } from "../lib/shapes/types";
-import { useShapeStore } from "../lib/store/shapes";
+import { hasGrandchildren, useShapeStore } from "../lib/store/shapes";
 import { ColorPicker } from "./color-picker";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
@@ -104,6 +104,7 @@ export function PropertyPanel() {
           <StackToggle
             onUpdate={handleBatchUpdate}
             selectedShapes={selectedShapes}
+            shapes={shapes}
           />
         )}
       </div>
@@ -367,12 +368,43 @@ function ConnectorSection({
 function StackToggle({
   selectedShapes,
   onUpdate,
+  shapes, // We need all shapes to check hierarchy
 }: {
   selectedShapes: Shape[];
   onUpdate: (updates: Partial<Shape>) => void;
+  shapes: Shape[];
 }) {
+  const isDisabled = selectedShapes.some((s) => {
+    // Check if shape has grandchildren (existing check)
+    if (hasGrandchildren(s.id, shapes)) {
+      return true;
+    }
+
+    // New check: Check if shape has a parent that is vertical
+    // Find parent via connector
+    const parentConnector = shapes.find(
+      (conn) =>
+        conn.type === "elbow-connector" && conn.endBinding?.shapeId === s.id
+    ) as ElbowConnectorShape | undefined;
+
+    if (parentConnector?.startBinding?.shapeId) {
+      const parent = shapes.find(
+        (p) => p.id === parentConnector.startBinding?.shapeId
+      );
+      if (parent?.childLayout === "vertical") {
+        return true;
+      }
+    }
+    return false;
+  });
+
   return (
-    <div className="flex items-center justify-between px-1">
+    <div
+      className={cn(
+        "flex items-center justify-between px-1",
+        isDisabled && "opacity-50"
+      )}
+    >
       <div className="flex items-center gap-2 text-gray-600">
         <SquaresFourIcon size={14} />
         <span>Stacked</span>
@@ -384,7 +416,11 @@ function StackToggle({
             ? "bg-blue-100 text-blue-600"
             : "bg-gray-100 text-gray-400"
         )}
+        disabled={isDisabled}
         onClick={() => {
+          if (isDisabled) {
+            return;
+          }
           const allStacked = selectedShapes.every((s) => s.stacked);
           onUpdate({ stacked: !allStacked });
         }}

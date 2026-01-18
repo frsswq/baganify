@@ -8,7 +8,7 @@ import {
   TrashIcon,
 } from "@phosphor-icons/react";
 import type { ElbowConnectorShape } from "../lib/shapes/types";
-import { useShapeStore } from "../lib/store/shapes";
+import { hasGrandchildren, useShapeStore } from "../lib/store/shapes";
 import { cn } from "../lib/utils";
 import { LayoutSettings } from "./layout-settings";
 import { Button } from "./ui/button";
@@ -99,21 +99,12 @@ export function Toolbar() {
 
             <div className="mx-1 h-4 w-px bg-gray-200" />
 
-            <Button
-              className={cn(
-                "h-8 w-8",
-                selectedShape.childLayout === "vertical" &&
-                  "bg-gray-100 text-blue-600"
-              )}
-              onClick={() => toggleChildLayout(selectedShape?.id)}
-              size="icon"
-              title="Toggle Vertical Stack Mode"
-              variant={
-                selectedShape.childLayout === "vertical" ? "secondary" : "ghost"
-              }
-            >
-              <ListIcon size={16} weight="bold" />
-            </Button>
+            <ToolbarStackToggle
+              hasVerticalParent={hasVerticalParent}
+              selectedShape={selectedShape}
+              shapes={shapes}
+              toggleChildLayout={toggleChildLayout}
+            />
           </>
         ) : (
           <Button
@@ -174,5 +165,51 @@ export function Toolbar() {
         • Double-click to edit
       </div>
     </div>
+  );
+}
+
+function ToolbarStackToggle({
+  selectedShape,
+  toggleChildLayout,
+  shapes,
+  hasVerticalParent,
+}: {
+  // biome-ignore lint/suspicious/noExplicitAny: Shape type is complex
+  selectedShape: any;
+  toggleChildLayout: (id: string) => void;
+  // biome-ignore lint/suspicious/noExplicitAny: Shape[]
+  shapes: any[];
+  hasVerticalParent: boolean;
+}) {
+  const isTooDeep = hasGrandchildren(selectedShape.id, shapes);
+  const isDisabled = isTooDeep || hasVerticalParent;
+
+  return (
+    <Button
+      className={cn(
+        "h-8 w-8",
+        selectedShape.childLayout === "vertical" && "bg-gray-100 text-blue-600",
+        isDisabled && "cursor-not-allowed opacity-50"
+      )}
+      disabled={isDisabled}
+      onClick={() => {
+        if (!isDisabled) {
+          toggleChildLayout(selectedShape?.id);
+        }
+      }}
+      size="icon"
+      title={(() => {
+        if (isTooDeep) {
+          return "Cannot stack: Item has grandchildren (max depth 1 allowed for stack)";
+        }
+        if (hasVerticalParent) {
+          return "Cannot stack: Parent is already stacked (nested stacks not allowed)";
+        }
+        return "Toggle Vertical Stack Mode";
+      })()}
+      variant={selectedShape.childLayout === "vertical" ? "secondary" : "ghost"}
+    >
+      <ListIcon size={16} weight="bold" />
+    </Button>
   );
 }
