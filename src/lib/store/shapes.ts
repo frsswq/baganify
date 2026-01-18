@@ -367,6 +367,7 @@ export const useShapeStore = create<ShapeStore>((set, get) => ({
 
   deleteSelected: () => {
     get().saveHistory();
+    const { canvasSize } = get();
     set((state) => {
       const { selectedIds, shapes, shapeIds } = state;
       const idsToRemove = new Set(selectedIds);
@@ -382,15 +383,27 @@ export const useShapeStore = create<ShapeStore>((set, get) => ({
         }
       }
 
-      const newShapes = { ...shapes };
-      for (const id of idsToRemove) {
-        delete newShapes[id];
+      const remainingShapes = currentShapesArray.filter(
+        (s) => !idsToRemove.has(s.id)
+      );
+
+      const layouted = layoutShapesByLevel(
+        remainingShapes,
+        canvasSize.width,
+        canvasSize.height,
+        state.layoutParams
+      );
+
+      const final = updateAllConnectors(layouted);
+      const finalRecord: Record<string, Shape> = {};
+      const finalIds = final.map((s) => s.id);
+      for (const s of final) {
+        finalRecord[s.id] = s;
       }
-      const newShapeIds = shapeIds.filter((id) => !idsToRemove.has(id));
 
       return {
-        shapes: newShapes,
-        shapeIds: newShapeIds,
+        shapes: finalRecord,
+        shapeIds: finalIds,
         selectedIds: new Set<string>(),
       };
     });
