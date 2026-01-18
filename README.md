@@ -4,7 +4,7 @@
   <h1>baganify</h1>
 
   <p>
-    <strong>office-compatible shape generator for the web.</strong>
+    <strong>local-first, office-compatible shape generator for the web.</strong>
   </p>
 
   <p>
@@ -23,6 +23,7 @@
 - **org charts**: auto-layout generation for organizational hierarchies.
 - **vector graphics**: full svg support with precise path manipulation.
 - **modern ui**: built with shadcn principles and base ui primitives.
+- **local only**: runs entirely in your browser. no server-side data processing, ensuring complete privacy.
 
 ## run locally
 
@@ -48,7 +49,8 @@ bun run build
 
 ## tech stack
 
-- **framework**: tanstack start (ssr/spa)
+- **framework**: react spa + tanstack router
+- **build**: vite (static export)
 - **styling**: tailwind css v4 + base ui
 - **state**: zustand
 - **icons**: phosphor icons
