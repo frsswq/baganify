@@ -2,7 +2,7 @@ import { DesktopIcon } from "@phosphor-icons/react";
 import { createFileRoute } from "@tanstack/react-router";
 import { Canvas } from "../components/canvas";
 import { ExportPanel } from "../components/export-panel";
-import { PropertyPanel } from "../components/property-panel";
+import { Sidebar } from "../components/sidebar";
 import { Toolbar } from "../components/toolbar";
 import { useShapeStore } from "../lib/store/shapes";
 
@@ -31,24 +31,8 @@ function ShapeBuilder() {
         </div>
       </div>
       <div className="hidden h-dvh w-full overflow-hidden bg-[#f8f9fa] md:flex">
-        {/* Left Sidebar - Property Panel */}
-        <div className="relative z-20 flex h-full w-[240px] flex-none flex-col border-gray-200 border-r bg-white">
-          <div className="flex h-12 flex-none items-center gap-2 border-gray-200 border-b px-4">
-            <img
-              alt="Baganify Logo"
-              className="h-6 w-6"
-              height={24}
-              src="/favicon.svg"
-              width={24}
-            />
-            <span className="font-semibold text-gray-900 text-sm">
-              Baganify
-            </span>
-          </div>
-          <div className="min-h-0 flex-1">
-            <PropertyPanel />
-          </div>
-        </div>
+        {/* Left Sidebar - Shared Component */}
+        <Sidebar />
 
         {/* Main Content Area */}
         <div className="relative h-full flex-1">

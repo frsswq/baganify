@@ -3,8 +3,16 @@ import type {
   ElbowConnectorShape,
   EllipseShape,
   RectangleShape,
-  Shape,
+  Shape as ShapeImport,
 } from "../shapes/types";
+export type Shape = ShapeImport;
+
+export interface Viewport {
+  x: number;
+  y: number;
+  zoom: number;
+}
+
 import { createId, createRectangle } from "../shapes/types";
 
 // Helper to reconstruct array from normalized state
@@ -58,6 +66,15 @@ interface ShapeStore {
   // Layout
   autoLayout: () => void;
 
+  // Project Management
+  loadChart: (data: {
+    shapes: Record<string, Shape>;
+    shapeIds: string[];
+    layoutParams: LayoutParams;
+    viewport: Viewport;
+  }) => void;
+  reset: () => void;
+
   // History actions
   undo: () => void;
   redo: () => void;
@@ -91,6 +108,32 @@ export const useShapeStore = create<ShapeStore>((set, get) => ({
   clipboard: [],
 
   setViewport: (viewport) => set({ viewport }),
+
+  loadChart: (data) => {
+    get().saveHistory();
+    set({
+      shapes: data.shapes,
+      shapeIds: data.shapeIds,
+      layoutParams: data.layoutParams,
+      viewport: data.viewport,
+      selectedIds: new Set(),
+      // Keep history or reset? Usually loading a chart resets history of previous session.
+      history: [],
+      historyIndex: -1,
+    });
+  },
+
+  reset: () => {
+    set({
+      shapes: {},
+      shapeIds: [],
+      selectedIds: new Set(),
+      viewport: { x: 0, y: 0, zoom: 1 },
+      layoutParams: DEFAULT_LAYOUT_PARAMS,
+      history: [],
+      historyIndex: -1,
+    });
+  },
 
   setLayoutParams: (params) => {
     set((state) => {

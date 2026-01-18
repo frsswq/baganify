@@ -69,7 +69,7 @@ export function PropertyPanel() {
   };
 
   return (
-    <div className="flex h-full w-full flex-col overflow-hidden border-gray-200 border-r bg-white text-xs">
+    <div className="flex h-full w-full flex-col overflow-hidden text-xs">
       <div className="flex-1 space-y-3 overflow-y-auto p-3">
         {/* Shape Type */}
         {allRectOrEllipse && (
