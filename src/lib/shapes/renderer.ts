@@ -138,20 +138,35 @@ function getTrianglePoints(
 function getElbowPath(shape: ElbowConnectorShape): string {
   const { startPoint, endPoint, startDirection } = shape;
 
-  // Calculate the midpoint for the elbow
-  let path: string;
+  if (startDirection === "vertical") {
+    // Check if we are connecting to the side of a child (Vertical Stack layout)
+    if (
+      shape.endBinding?.side === "left" ||
+      shape.endBinding?.side === "right"
+    ) {
+      // "Jogged Spine" style for vertical lists (Image 2 style)
+      // Parent Center -> Down -> Left/Right to Spine -> Down -> Right/Left to Child
+      const spineOffset = 20; // Distance from child left edge to spine
+      const verticalDrop = 20; // How far down from parent before jogging
 
-  if (startDirection === "horizontal") {
-    // Go horizontal first, then vertical
-    const midX = (startPoint.x + endPoint.x) / 2;
-    path = `M ${startPoint.x} ${startPoint.y} L ${midX} ${startPoint.y} L ${midX} ${endPoint.y} L ${endPoint.x} ${endPoint.y}`;
-  } else {
-    // Go vertical first, then horizontal
+      const spineX =
+        shape.endBinding.side === "left"
+          ? endPoint.x - spineOffset
+          : endPoint.x + spineOffset;
+
+      const jogY = startPoint.y + verticalDrop;
+
+      return `M ${startPoint.x} ${startPoint.y} L ${startPoint.x} ${jogY} L ${spineX} ${jogY} L ${spineX} ${endPoint.y} L ${endPoint.x} ${endPoint.y}`;
+    }
+
+    // Standard Vertical -> Top/Bottom connection (Org Chart Tree layout)
+    // Needs a mid-point for the horizontal segment
     const midY = (startPoint.y + endPoint.y) / 2;
-    path = `M ${startPoint.x} ${startPoint.y} L ${startPoint.x} ${midY} L ${endPoint.x} ${midY} L ${endPoint.x} ${endPoint.y}`;
+    return `M ${startPoint.x} ${startPoint.y} L ${startPoint.x} ${midY} L ${endPoint.x} ${midY} L ${endPoint.x} ${endPoint.y}`;
   }
-
-  return path;
+  // Horizontal start
+  const midX = (startPoint.x + endPoint.x) / 2;
+  return `M ${startPoint.x} ${startPoint.y} L ${midX} ${startPoint.y} L ${midX} ${endPoint.y} L ${endPoint.x} ${endPoint.y}`;
 }
 
 /**
