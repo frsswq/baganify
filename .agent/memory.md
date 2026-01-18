@@ -17,6 +17,7 @@ Review them carefully and always take them into account when you generate respon
 - Avoid massive JSX blocks and compose smaller components
 - Colocate code that changes together
 - Avoid `useEffect` unless absolutely needed
+- Don't use `useMemo` or `useCallback` unless absolutely needed (we use React Compiler)
 
 
 ## Tailwind

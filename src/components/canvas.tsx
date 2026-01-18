@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { copyShapesToClipboard } from "../lib/clipboard/copy";
 import type { ElbowConnectorShape, Shape } from "../lib/shapes/types";
 import { boundsIntersect } from "../lib/shapes/types";
@@ -78,184 +78,156 @@ export function Canvas() {
   }, [size]);
 
   // Move handlers outside useEffect to reduce complexity and allow better organization
-  const handleZoom = useCallback(
-    (e: KeyboardEvent) => {
-      if (!(e.ctrlKey || e.metaKey)) {
-        return false;
-      }
-
-      let newZoom = viewportRef.current.zoom;
-      if (e.key === "=" || e.key === "+") {
-        newZoom = Math.min(newZoom * 1.2, 5);
-      } else if (e.key === "-") {
-        newZoom = Math.max(newZoom / 1.2, 0.1);
-      } else if (e.key === "0") {
-        newZoom = 1;
-      } else {
-        return false;
-      }
-
-      e.preventDefault();
-
-      const currentViewport = viewportRef.current;
-      const currentSize = sizeRef.current;
-      const cx = currentSize.width / 2;
-      const cy = currentSize.height / 2;
-
-      const worldCx = (cx - currentViewport.x) / currentViewport.zoom;
-      const worldCy = (cy - currentViewport.y) / currentViewport.zoom;
-
-      const newViewportX = cx - worldCx * newZoom;
-      const newViewportY = cy - worldCy * newZoom;
-
-      setViewport({
-        x: newViewportX,
-        y: newViewportY,
-        zoom: newZoom,
-      });
-      return true;
-    },
-    [setViewport]
-  );
-
-  const handleCopy = useCallback(
-    (e: KeyboardEvent) => {
-      if (!((e.ctrlKey || e.metaKey) && e.key === "c")) {
-        return false;
-      }
-      e.preventDefault();
-      copySelected();
-
-      // Async clipboard operation
-      (async () => {
-        const { shapes: currentShapes, selectedIds: currentSelectedIds } =
-          useShapeStore.getState();
-        const selectedShapes = currentShapes.filter((s) =>
-          currentSelectedIds.has(s.id)
-        );
-        if (selectedShapes.length > 0) {
-          try {
-            await copyShapesToClipboard(selectedShapes);
-            setToast({ visible: true, message: "Copied to clipboard" });
-          } catch (err) {
-            console.error("Failed to copy", err);
-            setToast({ visible: true, message: "Copied to clipboard" });
-          }
-        }
-      })();
-      return true;
-    },
-    [copySelected]
-  );
-
-  const handlePaste = useCallback(
-    (e: KeyboardEvent) => {
-      if (!((e.ctrlKey || e.metaKey) && e.key === "v")) {
-        return false;
-      }
-      e.preventDefault();
-      pasteClipboard();
-      setToast({ visible: true, message: "Pasted from clipboard" });
-      return true;
-    },
-    [pasteClipboard]
-  );
-
-  const handleSelectAll = useCallback(
-    (e: KeyboardEvent) => {
-      if (!((e.ctrlKey || e.metaKey) && (e.key === "a" || e.key === "A"))) {
-        return false;
-      }
-      e.preventDefault();
-      const { shapes } = useShapeStore.getState();
-      selectShapes(shapes.map((s) => s.id));
-      return true;
-    },
-    [selectShapes]
-  );
-
-  const handleHistory = useCallback(
-    (e: KeyboardEvent) => {
-      if (!(e.ctrlKey || e.metaKey)) {
-        return false;
-      }
-      if (e.key === "z" && !e.shiftKey) {
-        e.preventDefault();
-        undo();
-        return true;
-      }
-      if (e.key === "Z" || e.key === "y") {
-        e.preventDefault();
-        redo();
-        return true;
-      }
+  const handleZoom = (e: KeyboardEvent) => {
+    if (!(e.ctrlKey || e.metaKey)) {
       return false;
-    },
-    [undo, redo]
-  );
+    }
 
-  const handleDelete = useCallback(
-    (e: KeyboardEvent) => {
-      if (e.key !== "Delete" && e.key !== "Backspace") {
-        return false;
+    let newZoom = viewportRef.current.zoom;
+    if (e.key === "=" || e.key === "+") {
+      newZoom = Math.min(newZoom * 1.2, 5);
+    } else if (e.key === "-") {
+      newZoom = Math.max(newZoom / 1.2, 0.1);
+    } else if (e.key === "0") {
+      newZoom = 1;
+    } else {
+      return false;
+    }
+
+    e.preventDefault();
+
+    const currentViewport = viewportRef.current;
+    const currentSize = sizeRef.current;
+    const cx = currentSize.width / 2;
+    const cy = currentSize.height / 2;
+
+    const worldCx = (cx - currentViewport.x) / currentViewport.zoom;
+    const worldCy = (cy - currentViewport.y) / currentViewport.zoom;
+
+    const newViewportX = cx - worldCx * newZoom;
+    const newViewportY = cy - worldCy * newZoom;
+
+    setViewport({
+      x: newViewportX,
+      y: newViewportY,
+      zoom: newZoom,
+    });
+    return true;
+  };
+
+  const handleCopy = (e: KeyboardEvent) => {
+    if (!((e.ctrlKey || e.metaKey) && e.key === "c")) {
+      return false;
+    }
+    e.preventDefault();
+    copySelected();
+
+    // Async clipboard operation
+    (async () => {
+      const { shapes: currentShapes, selectedIds: currentSelectedIds } =
+        useShapeStore.getState();
+      const selectedShapes = currentShapes.filter((s) =>
+        currentSelectedIds.has(s.id)
+      );
+      if (selectedShapes.length > 0) {
+        try {
+          await copyShapesToClipboard(selectedShapes);
+          setToast({ visible: true, message: "Copied to clipboard" });
+        } catch (err) {
+          console.error("Failed to copy", err);
+          setToast({ visible: true, message: "Copied to clipboard" });
+        }
       }
+    })();
+    return true;
+  };
+
+  const handlePaste = (e: KeyboardEvent) => {
+    if (!((e.ctrlKey || e.metaKey) && e.key === "v")) {
+      return false;
+    }
+    e.preventDefault();
+    pasteClipboard();
+    setToast({ visible: true, message: "Pasted from clipboard" });
+    return true;
+  };
+
+  const handleSelectAll = (e: KeyboardEvent) => {
+    if (!((e.ctrlKey || e.metaKey) && (e.key === "a" || e.key === "A"))) {
+      return false;
+    }
+    e.preventDefault();
+    const { shapes } = useShapeStore.getState();
+    selectShapes(shapes.map((s) => s.id));
+    return true;
+  };
+
+  const handleHistory = (e: KeyboardEvent) => {
+    if (!(e.ctrlKey || e.metaKey)) {
+      return false;
+    }
+    if (e.key === "z" && !e.shiftKey) {
       e.preventDefault();
-      deleteSelected();
+      undo();
       return true;
-    },
-    [deleteSelected]
-  );
+    }
+    if (e.key === "Z" || e.key === "y") {
+      e.preventDefault();
+      redo();
+      return true;
+    }
+    return false;
+  };
 
-  const handleKeyDown = useCallback(
-    (e: KeyboardEvent) => {
-      if (handleZoom(e)) {
-        return;
-      }
-      if (handleSelectAll(e)) {
-        return;
-      }
-      if (handleCopy(e)) {
-        return;
-      }
-      if (handlePaste(e)) {
-        return;
-      }
-      if (handleHistory(e)) {
-        return;
-      }
-      if (handleDelete(e)) {
-        return;
-      }
+  const handleDelete = (e: KeyboardEvent) => {
+    if (e.key !== "Delete" && e.key !== "Backspace") {
+      return false;
+    }
+    e.preventDefault();
+    deleteSelected();
+    return true;
+  };
 
-      if (e.key === "Escape") {
-        clearSelection();
-      }
+  const handleKeyDown = (e: KeyboardEvent) => {
+    if (handleZoom(e)) {
+      return;
+    }
+    if (handleSelectAll(e)) {
+      return;
+    }
+    if (handleCopy(e)) {
+      return;
+    }
+    if (handlePaste(e)) {
+      return;
+    }
+    if (handleHistory(e)) {
+      return;
+    }
+    if (handleDelete(e)) {
+      return;
+    }
 
-      // Spacebar for panning
-      if (e.code === "Space") {
-        isSpacePressed.current = true;
-        document.body.style.cursor = "grab";
-      }
-    },
-    [
-      handleZoom,
-      handleSelectAll,
-      handleCopy,
-      handlePaste,
-      handleHistory,
-      handleDelete,
-      clearSelection,
-    ]
-  );
+    if (e.key === "Escape") {
+      clearSelection();
+    }
 
-  const handleKeyUp = useCallback((e: KeyboardEvent) => {
+    // Spacebar for panning
+    if (e.code === "Space") {
+      isSpacePressed.current = true;
+      document.body.style.cursor = "grab";
+    }
+  };
+
+  const handleKeyUp = (e: KeyboardEvent) => {
     if (e.code === "Space") {
       isSpacePressed.current = false;
       document.body.style.cursor = "default";
       setIsPanning(false);
     }
-  }, []);
+  };
 
+  // biome-ignore lint/correctness/useExhaustiveDependencies: React Compiler handles memoization
   useEffect(() => {
     window.addEventListener("keydown", handleKeyDown);
     window.addEventListener("keyup", handleKeyUp);
@@ -263,7 +235,7 @@ export function Canvas() {
       window.removeEventListener("keydown", handleKeyDown);
       window.removeEventListener("keyup", handleKeyUp);
     };
-  }, [handleKeyDown, handleKeyUp]);
+  }, []);
 
   const getSVGPoint = (clientX: number, clientY: number) => {
     const svg = svgRef.current;
