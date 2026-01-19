@@ -1,4 +1,5 @@
 import type { LayoutParams } from "./layout/types";
+import { DEFAULT_LAYOUT_PARAMS } from "./layout/types";
 import type { Shape, Viewport } from "./store/shapes";
 
 export interface ChartData {
@@ -75,6 +76,25 @@ export function deleteChart(id: string) {
   localStorage.removeItem(CHART_PREFIX + id);
   const index = getAllCharts().filter((c) => c.id !== id);
   localStorage.setItem(INDEX_KEY, JSON.stringify(index));
+  localStorage.setItem(INDEX_KEY, JSON.stringify(index));
+}
+
+export function createNewChart(id: string, name: string): ChartMeta {
+  const meta = { id, name, updatedAt: Date.now() };
+  const index = getAllCharts();
+  index.unshift(meta);
+  localStorage.setItem(INDEX_KEY, JSON.stringify(index));
+
+  // Initialize empty chart data to avoid "null" load
+  const emptyData: ChartData = {
+    shapes: {},
+    shapeIds: [],
+    layoutParams: DEFAULT_LAYOUT_PARAMS,
+    viewport: { x: 0, y: 0, zoom: 1 },
+  };
+  localStorage.setItem(CHART_PREFIX + id, JSON.stringify(emptyData));
+
+  return meta;
 }
 
 export function createChartId(): string {
