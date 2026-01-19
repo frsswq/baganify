@@ -56,25 +56,38 @@ export function Sidebar({ currentChartId }: { currentChartId?: string }) {
     }
 
     // 3. Notify with Undo
-    toast("Chart deleted", {
-      description: chartMeta?.name || "Untitled Chart",
-      action: {
-        label: "Undo",
-        onClick: () => {
-          if (chartMeta && chartData) {
-            // Restore data
-            saveChart(id, chartMeta.name, chartData);
-            // Refresh list
-            setCharts(getAllCharts());
-            toast.success("Chart restored");
-          }
-        },
-      },
-    });
+    toast.custom((t) => (
+      <div className="flex w-full items-center justify-between gap-2 rounded-lg border border-red-100 bg-white px-4 py-2 shadow-lg">
+        <span className="font-medium text-gray-900 text-xs">
+          {chartMeta?.name || "Untitled Chart"} deleted
+        </span>
+        <button
+          className="rounded bg-red-50 px-2 py-1 font-bold text-red-600 text-xs transition-colors hover:bg-red-100"
+          onClick={(e) => {
+            e.stopPropagation();
+            if (chartMeta && chartData) {
+              saveChart(id, chartMeta.name, chartData);
+              setCharts(getAllCharts());
+              toast.dismiss(t);
+              toast.custom(() => (
+                <div className="flex w-full items-center gap-2 rounded-lg border border-green-100 bg-white px-4 py-2 shadow-lg">
+                  <span className="font-medium text-gray-900 text-xs">
+                    Chart restored
+                  </span>
+                </div>
+              ));
+            }
+          }}
+          type="button"
+        >
+          Undo
+        </button>
+      </div>
+    ));
   };
 
   return (
-    <div className="flex h-full w-[260px] flex-none flex-col border-[#E5E5E5] border-r bg-[#F9F9F9] text-sm">
+    <div className="flex h-full w-[260px] flex-none flex-col border-[#E5E5E5] border-r bg-[#F9F9F9] text-xs">
       {/* Header / Logo */}
       <div className="flex h-14 flex-none items-center px-3">
         <Link
